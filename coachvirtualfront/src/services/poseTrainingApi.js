@@ -2,7 +2,7 @@
  * Servicio de API para datos de entrenamiento de poses (IA)
  * Usa el cliente api.js centralizado con autenticación y manejo de tokens
  */
-import api from '../api/api';
+import api from '../api/api'
 
 /**
  * Guarda datos de entrenamiento de poses en el backend
@@ -17,11 +17,14 @@ import api from '../api/api';
  */
 export async function savePoseTrainingData(data) {
   try {
-    const response = await api.post('/poses/', data);
-    return response.data;
+    const response = await api.post('/poses/', data)
+    return response.data
   } catch (error) {
-    const message = error.response?.data?.message || error.response?.data?.detail || 'Error al guardar datos de entrenamiento';
-    throw new Error(message);
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.detail ||
+      'Error al guardar datos de entrenamiento'
+    throw new Error(message)
   }
 }
 
@@ -35,11 +38,11 @@ export async function savePoseTrainingData(data) {
  */
 export async function getPoseTrainingData(filters = {}) {
   try {
-    const params = new URLSearchParams(filters);
-    const response = await api.get(`/poses/?${params}`);
-    return response.data;
+    const params = new URLSearchParams(filters)
+    const response = await api.get(`/poses/?${params}`)
+    return response.data
   } catch (error) {
-    throw new Error('Error al obtener datos de entrenamiento');
+    throw new Error('Error al obtener datos de entrenamiento')
   }
 }
 
@@ -50,10 +53,10 @@ export async function getPoseTrainingData(filters = {}) {
  */
 export async function getPoseTrainingDataById(id) {
   try {
-    const response = await api.get(`/poses/${id}/`);
-    return response.data;
+    const response = await api.get(`/poses/${id}/`)
+    return response.data
   } catch (error) {
-    throw new Error('Error al obtener dato de entrenamiento');
+    throw new Error('Error al obtener dato de entrenamiento')
   }
 }
 
@@ -64,9 +67,9 @@ export async function getPoseTrainingDataById(id) {
  */
 export async function deletePoseTrainingData(id) {
   try {
-    await api.delete(`/poses/${id}/`);
+    await api.delete(`/poses/${id}/`)
   } catch (error) {
-    throw new Error('Error al eliminar dato de entrenamiento');
+    throw new Error('Error al eliminar dato de entrenamiento')
   }
 }
 
@@ -76,10 +79,10 @@ export async function deletePoseTrainingData(id) {
  */
 export async function getPoseTrainingStats() {
   try {
-    const response = await api.get('/poses/stats/');
-    return response.data;
+    const response = await api.get('/poses/stats/')
+    return response.data
   } catch (error) {
-    throw new Error('Error al obtener estadísticas');
+    throw new Error('Error al obtener estadísticas')
   }
 }
 
@@ -89,10 +92,10 @@ export async function getPoseTrainingStats() {
  */
 export async function exportPoseTrainingData() {
   try {
-    const response = await api.get('/poses/export/');
-    return response.data;
+    const response = await api.get('/poses/export/')
+    return response.data
   } catch (error) {
-    throw new Error('Error al exportar datos');
+    throw new Error('Error al exportar datos')
   }
 }
 
@@ -103,10 +106,10 @@ export async function exportPoseTrainingData() {
  */
 export async function importPoseTrainingData(data) {
   try {
-    const response = await api.post('/poses/import/', { data });
-    return response.data;
+    const response = await api.post('/poses/import/', { data })
+    return response.data
   } catch (error) {
-    throw new Error('Error al importar datos');
+    throw new Error('Error al importar datos')
   }
 }
 
@@ -116,11 +119,11 @@ export async function importPoseTrainingData(data) {
  */
 export async function getAvailableExercises() {
   try {
-    const stats = await getPoseTrainingStats();
-    return stats.ejercicios || [];
+    const stats = await getPoseTrainingStats()
+    return stats.ejercicios || []
   } catch (error) {
-    console.error('Error obteniendo ejercicios:', error);
-    return [];
+    console.error('Error obteniendo ejercicios:', error)
+    return []
   }
 }
 
@@ -136,14 +139,14 @@ export async function validatePose(poseData, ejercicio) {
       landmarks: poseData.landmarks,
       angulos: poseData.angulos,
       ejercicio,
-    });
-    return response.data;
+    })
+    return response.data
   } catch (error) {
     // Si no hay endpoint de validación, devolver resultado por defecto
     return {
       isCorrect: null,
       confidence: 0,
       message: 'Validación no disponible',
-    };
+    }
   }
 }

@@ -1,6 +1,8 @@
-# musculos/serializers.py
+"""Serializadores para musculos, ejercicios y tipos."""
+
 from rest_framework import serializers
-from .models import Musculo, DetalleMusculo, Ejercicio, EjercicioAsignado, Tipo
+
+from .models import DetalleMusculo, Ejercicio, EjercicioAsignado, Musculo, Tipo
 
 
 class TipoSerializer(serializers.ModelSerializer):

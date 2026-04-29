@@ -1,23 +1,23 @@
-import { useState, useRef, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
-import YogaPoseDetector from '../../../Yoga/YogaPoseDetector';
-import { calculateBodyAngles } from '../../../../utils/poseUtils';
-import { useSpeech } from '../../../../utils/useSpeech';
+import { useState, useRef, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
+import YogaPoseDetector from '../../../Yoga/YogaPoseDetector'
+import { calculateBodyAngles } from '../../../../utils/poseUtils'
+import { useSpeech } from '../../../../utils/useSpeech'
 
 /**
  * Vista de rutina de Estiramiento Yoga (Urdhva Hastasana / Postura de la Montaña con brazos arriba)
  * Objetivo: Estirar la espalda y los brazos manteniendo una postura recta.
  */
 export default function EstiramientoYoga() {
-  const [started, setStarted] = useState(false);
-  const location = useLocation();
-  const passedImage = location?.state?.imageUrl || null;
-  const passedNombre = location?.state?.nombre || 'Estiramiento Yoga';
+  const [started, setStarted] = useState(false)
+  const location = useLocation()
+  const passedImage = location?.state?.imageUrl || null
+  const passedNombre = location?.state?.nombre || 'Estiramiento Yoga'
 
-  const [repCount, setRepCount] = useState(0);
-  const [stage, setStage] = useState('start'); // 'start', 'holding', 'relax'
-  const [feedback, setFeedback] = useState('Levanta los brazos hacia el cielo');
-  const [holdTimer, setHoldTimer] = useState(0);
+  const [repCount, setRepCount] = useState(0)
+  const [stage, setStage] = useState('start') // 'start', 'holding', 'relax'
+  const [feedback, setFeedback] = useState('Levanta los brazos hacia el cielo')
+  const [holdTimer, setHoldTimer] = useState(0)
 
   const [currentAngles, setCurrentAngles] = useState({
     rightShoulder: 0,
@@ -25,23 +25,23 @@ export default function EstiramientoYoga() {
     rightElbow: 0,
     leftElbow: 0,
     rightHip: 0,
-    leftHip: 0
-  });
+    leftHip: 0,
+  })
 
-  const { speak } = useSpeech({ lang: 'es-ES' });
+  const { speak } = useSpeech({ lang: 'es-ES' })
 
   // Refs para lógica de control
-  const holdStartTimeRef = useRef(null);
-  const lastRepTimeRef = useRef(0);
+  const holdStartTimeRef = useRef(null)
+  const lastRepTimeRef = useRef(0)
 
   // Constantes de umbral
-  const ARM_UP_ANGLE = 140;      // Ángulo de hombro (más permisivo)
-  const ELBOW_STRAIGHT = 140;    // Brazo estirado (más permisivo)
-  const BODY_STRAIGHT = 140;     // Cuerpo recto (más permisivo)
-  const HOLD_DURATION_MS = 5000; // 5 segundos de estiramiento
+  const ARM_UP_ANGLE = 140 // Ángulo de hombro (más permisivo)
+  const ELBOW_STRAIGHT = 140 // Brazo estirado (más permisivo)
+  const BODY_STRAIGHT = 140 // Cuerpo recto (más permisivo)
+  const HOLD_DURATION_MS = 5000 // 5 segundos de estiramiento
 
   const handlePoseDetected = (landmarks) => {
-    const angles = calculateBodyAngles(landmarks);
+    const angles = calculateBodyAngles(landmarks)
 
     // Extraer ángulos relevantes
     // Nota: calculateBodyAngles devuelve { rightShoulder, rightElbow, rightHip, rightKnee, ... }
@@ -50,11 +50,7 @@ export default function EstiramientoYoga() {
     // Elbow: Shoulder-Elbow-Wrist
     // Hip: Shoulder-Hip-Knee
 
-    const {
-      rightShoulder, leftShoulder,
-      rightElbow, leftElbow,
-      rightHip, leftHip
-    } = angles;
+    const { rightShoulder, leftShoulder, rightElbow, leftElbow, rightHip, leftHip } = angles
 
     setCurrentAngles({
       rightShoulder: Math.round(rightShoulder),
@@ -62,83 +58,81 @@ export default function EstiramientoYoga() {
       rightElbow: Math.round(rightElbow),
       leftElbow: Math.round(leftElbow),
       rightHip: Math.round(rightHip),
-      leftHip: Math.round(leftHip)
-    });
+      leftHip: Math.round(leftHip),
+    })
 
     // Validar postura correcta: Brazos arriba y estirados, cuerpo recto
-    const isArmsUp = rightShoulder > ARM_UP_ANGLE && leftShoulder > ARM_UP_ANGLE;
-    const isArmsStraight = rightElbow > ELBOW_STRAIGHT && leftElbow > ELBOW_STRAIGHT;
-    const isBodyStraight = rightHip > BODY_STRAIGHT && leftHip > BODY_STRAIGHT;
+    const isArmsUp = rightShoulder > ARM_UP_ANGLE && leftShoulder > ARM_UP_ANGLE
+    const isArmsStraight = rightElbow > ELBOW_STRAIGHT && leftElbow > ELBOW_STRAIGHT
+    const isBodyStraight = rightHip > BODY_STRAIGHT && leftHip > BODY_STRAIGHT
 
-    const isPoseCorrect = isArmsUp && isArmsStraight && isBodyStraight;
+    const isPoseCorrect = isArmsUp && isArmsStraight && isBodyStraight
 
-    const now = Date.now();
+    const now = Date.now()
 
     if (stage === 'start' || stage === 'relax') {
       if (isPoseCorrect) {
         // Iniciar hold
         if (!holdStartTimeRef.current) {
-          holdStartTimeRef.current = now;
-          lastRepTimeRef.current = now; // Usamos esto como "última vez correcto" también
-          setStage('holding');
-          setFeedback('Mantén la postura...');
-          speak('Mantén la postura');
+          holdStartTimeRef.current = now
+          lastRepTimeRef.current = now // Usamos esto como "última vez correcto" también
+          setStage('holding')
+          setFeedback('Mantén la postura...')
+          speak('Mantén la postura')
         }
       } else {
         // Feedback guía
-        if (!isBodyStraight) setFeedback('Ponte derecho');
-        else if (!isArmsUp) setFeedback('Sube más los brazos');
-        else if (!isArmsStraight) setFeedback('Estira los codos');
-        else setFeedback('Levanta los brazos hacia el cielo');
+        if (!isBodyStraight) setFeedback('Ponte derecho')
+        else if (!isArmsUp) setFeedback('Sube más los brazos')
+        else if (!isArmsStraight) setFeedback('Estira los codos')
+        else setFeedback('Levanta los brazos hacia el cielo')
 
-        holdStartTimeRef.current = null;
+        holdStartTimeRef.current = null
       }
-    }
-    else if (stage === 'holding') {
+    } else if (stage === 'holding') {
       if (isPoseCorrect) {
-        lastRepTimeRef.current = now; // Actualizar tiempo de última postura correcta
+        lastRepTimeRef.current = now // Actualizar tiempo de última postura correcta
 
-        const elapsed = now - holdStartTimeRef.current;
-        const remaining = Math.ceil((HOLD_DURATION_MS - elapsed) / 1000);
-        setHoldTimer(remaining);
+        const elapsed = now - holdStartTimeRef.current
+        const remaining = Math.ceil((HOLD_DURATION_MS - elapsed) / 1000)
+        setHoldTimer(remaining)
 
         if (elapsed >= HOLD_DURATION_MS) {
           // Completado
-          setStage('relax');
-          setFeedback('¡Bien! Baja los brazos y relaja');
-          speak('Descansa');
-          setRepCount(c => c + 1);
-          holdStartTimeRef.current = null;
-          setHoldTimer(0);
+          setStage('relax')
+          setFeedback('¡Bien! Baja los brazos y relaja')
+          speak('Descansa')
+          setRepCount((c) => c + 1)
+          holdStartTimeRef.current = null
+          setHoldTimer(0)
         }
       } else {
         // Verificar periodo de gracia (1 segundo)
-        const timeSinceLastCorrect = now - lastRepTimeRef.current;
+        const timeSinceLastCorrect = now - lastRepTimeRef.current
 
         if (timeSinceLastCorrect > 1000) {
           // Perdió la postura después de la gracia
-          setStage('start');
-          setFeedback('Postura perdida, intenta de nuevo');
-          holdStartTimeRef.current = null;
-          setHoldTimer(0);
+          setStage('start')
+          setFeedback('Postura perdida, intenta de nuevo')
+          holdStartTimeRef.current = null
+          setHoldTimer(0)
         } else {
           // En periodo de gracia, mantener feedback pero advertir visualmente si se desea
           // Por ahora mantenemos el estado 'holding'
         }
       }
     }
-  };
+  }
 
   const getAngleColor = (angle, target, isMin = true) => {
-    const isValid = isMin ? angle > target : angle < target;
-    return isValid ? 'text-green-600' : 'text-red-600';
-  };
+    const isValid = isMin ? angle > target : angle < target
+    return isValid ? 'text-green-600' : 'text-red-600'
+  }
 
   const highlightedAngles = useMemo(() => {
     // Visualizar líneas verdes si la postura es correcta
     const isCorrect =
-      currentAngles.rightShoulder > ARM_UP_ANGLE &&
-      currentAngles.rightElbow > ELBOW_STRAIGHT;
+      currentAngles.rightShoulder > ARM_UP_ANGLE && currentAngles.rightElbow > ELBOW_STRAIGHT
 
     return [
       // Brazo derecho
@@ -146,9 +140,9 @@ export default function EstiramientoYoga() {
       { indices: [24, 12, 14], angle: currentAngles.rightShoulder, isValid: isCorrect },
       // Brazo izquierdo
       { indices: [11, 13, 15], angle: currentAngles.leftElbow, isValid: isCorrect },
-      { indices: [23, 11, 13], angle: currentAngles.leftShoulder, isValid: isCorrect }
-    ];
-  }, [currentAngles]);
+      { indices: [23, 11, 13], angle: currentAngles.leftShoulder, isValid: isCorrect },
+    ]
+  }, [currentAngles])
 
   if (!started) {
     return (
@@ -181,7 +175,7 @@ export default function EstiramientoYoga() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -189,7 +183,10 @@ export default function EstiramientoYoga() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-blue-900">{passedNombre}</h2>
-          <button onClick={() => setStarted(false)} className="text-blue-600 hover:text-blue-800 font-medium">
+          <button
+            onClick={() => setStarted(false)}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
             &larr; Volver
           </button>
         </div>
@@ -198,7 +195,10 @@ export default function EstiramientoYoga() {
           {/* Columna Izquierda: Cámara */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border-4 border-white relative">
-              <YogaPoseDetector onPoseDetected={handlePoseDetected} highlightedAngles={highlightedAngles} />
+              <YogaPoseDetector
+                onPoseDetected={handlePoseDetected}
+                highlightedAngles={highlightedAngles}
+              />
 
               {/* Overlay de Timer */}
               {stage === 'holding' && (
@@ -210,25 +210,33 @@ export default function EstiramientoYoga() {
 
             {/* Panel de Datos en tiempo real */}
             <div className="mt-4 bg-white rounded-xl shadow p-4">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Métricas en tiempo real</h3>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Métricas en tiempo real
+              </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div className="p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500">Hombros</div>
-                  <div className={`text-xl font-bold ${getAngleColor(currentAngles.rightShoulder, ARM_UP_ANGLE)}`}>
+                  <div
+                    className={`text-xl font-bold ${getAngleColor(currentAngles.rightShoulder, ARM_UP_ANGLE)}`}
+                  >
                     {currentAngles.rightShoulder}°
                   </div>
                   <div className="text-xs text-gray-400">Meta: &gt;{ARM_UP_ANGLE}°</div>
                 </div>
                 <div className="p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500">Codos</div>
-                  <div className={`text-xl font-bold ${getAngleColor(currentAngles.rightElbow, ELBOW_STRAIGHT)}`}>
+                  <div
+                    className={`text-xl font-bold ${getAngleColor(currentAngles.rightElbow, ELBOW_STRAIGHT)}`}
+                  >
                     {currentAngles.rightElbow}°
                   </div>
                   <div className="text-xs text-gray-400">Meta: &gt;{ELBOW_STRAIGHT}°</div>
                 </div>
                 <div className="p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500">Cadera</div>
-                  <div className={`text-xl font-bold ${getAngleColor(currentAngles.rightHip, BODY_STRAIGHT)}`}>
+                  <div
+                    className={`text-xl font-bold ${getAngleColor(currentAngles.rightHip, BODY_STRAIGHT)}`}
+                  >
                     {currentAngles.rightHip}°
                   </div>
                   <div className="text-xs text-gray-400">Meta: &gt;{BODY_STRAIGHT}°</div>
@@ -252,13 +260,17 @@ export default function EstiramientoYoga() {
             </div>
 
             {/* Tarjeta de Feedback */}
-            <div className={`rounded-xl shadow-lg p-6 text-center transition-colors duration-300 ${stage === 'holding' ? 'bg-green-100 border-2 border-green-400' :
-              stage === 'relax' ? 'bg-blue-100 border-2 border-blue-400' : 'bg-white'
-              }`}>
+            <div
+              className={`rounded-xl shadow-lg p-6 text-center transition-colors duration-300 ${
+                stage === 'holding'
+                  ? 'bg-green-100 border-2 border-green-400'
+                  : stage === 'relax'
+                    ? 'bg-blue-100 border-2 border-blue-400'
+                    : 'bg-white'
+              }`}
+            >
               <h3 className="text-gray-500 font-medium mb-2">Instrucción IA</h3>
-              <div className="text-2xl font-bold text-gray-800">
-                {feedback}
-              </div>
+              <div className="text-2xl font-bold text-gray-800">{feedback}</div>
             </div>
 
             {/* Guía Visual Rápida */}
@@ -266,15 +278,21 @@ export default function EstiramientoYoga() {
               <h3 className="font-semibold text-gray-700 mb-4">Guía de Postura</h3>
               <div className="space-y-3">
                 <div className="flex items-center">
-                  <span className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightShoulder > ARM_UP_ANGLE ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                  <span
+                    className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightShoulder > ARM_UP_ANGLE ? 'bg-green-500' : 'bg-gray-300'}`}
+                  ></span>
                   <span className="text-sm text-gray-600">Brazos arriba</span>
                 </div>
                 <div className="flex items-center">
-                  <span className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightElbow > ELBOW_STRAIGHT ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                  <span
+                    className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightElbow > ELBOW_STRAIGHT ? 'bg-green-500' : 'bg-gray-300'}`}
+                  ></span>
                   <span className="text-sm text-gray-600">Codos estirados</span>
                 </div>
                 <div className="flex items-center">
-                  <span className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightHip > BODY_STRAIGHT ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                  <span
+                    className={`w-3 h-3 rounded-full mr-3 ${currentAngles.rightHip > BODY_STRAIGHT ? 'bg-green-500' : 'bg-gray-300'}`}
+                  ></span>
                   <span className="text-sm text-gray-600">Espalda recta</span>
                 </div>
               </div>
@@ -283,5 +301,5 @@ export default function EstiramientoYoga() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,35 +1,48 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+"""Controladores de usuarios para el API."""
+
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from ..models import Usuario
 from ..serializers import UsuarioSerializer
 
-# ⬇️ NUEVO: endpoint para traer el usuario autenticado con flags
+
 class MeView(APIView):
+    """Retorna los datos del usuario autenticado."""
+
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
+        """Retorna el usuario autenticado."""
         return Response(UsuarioSerializer(request.user).data)
 
+
 class UsuarioListaCrearVista(APIView):
-    def get_permissions(self):
+    """Lista usuarios o crea un nuevo usuario."""
+
+    def get_permissions(self) -> list[BasePermission]:
+        """Define permisos segun el metodo HTTP."""
         if self.request.method == "POST":
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
+        """Lista usuarios para administradores."""
         if not request.user.is_superuser:
             return Response(
                 {"detail": "No tienes permiso para ver la lista de usuarios."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
         usuarios = Usuario.objects.all().order_by("id")
         serializer = UsuarioSerializer(usuarios, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
+        """Crea un nuevo usuario."""
         serializer = UsuarioSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -38,14 +51,18 @@ class UsuarioListaCrearVista(APIView):
 
 
 class UsuarioDetalleVista(APIView):
+    """Obtiene, actualiza o elimina un usuario."""
+
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
+    def get(self, request: Request, pk: int) -> Response:
+        """Obtiene un usuario por ID."""
         usuario = get_object_or_404(Usuario, pk=pk)
         serializer = UsuarioSerializer(usuario)
         return Response(serializer.data)
 
-    def put(self, request, pk):
+    def put(self, request: Request, pk: int) -> Response:
+        """Actualiza un usuario por ID."""
         usuario = get_object_or_404(Usuario, pk=pk)
         serializer = UsuarioSerializer(usuario, data=request.data)
         if serializer.is_valid():
@@ -53,7 +70,8 @@ class UsuarioDetalleVista(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
+    def delete(self, request: Request, pk: int) -> Response:
+        """Elimina un usuario por ID."""
         usuario = get_object_or_404(Usuario, pk=pk)
         usuario.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

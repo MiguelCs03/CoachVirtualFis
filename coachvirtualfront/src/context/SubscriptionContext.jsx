@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '../auth/useAuth';
-import api from '../api/api';
+import { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from '../auth/useAuth'
+import api from '../api/api'
 
-const SubscriptionContext = createContext();
+const SubscriptionContext = createContext()
 
 // Configuración de planes (debe coincidir con el backend)
 export const PLANES = {
@@ -50,74 +50,74 @@ export const PLANES = {
     graficas_progreso: true,
     alertas_personalizadas: true,
     con_anuncios: false,
-  }
-};
+  },
+}
 
 export function SubscriptionProvider({ children }) {
-  const { user } = useAuth();
-  const [planActual, setPlanActual] = useState(null);
-  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user } = useAuth()
+  const [planActual, setPlanActual] = useState(null)
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (user) {
-      cargarPlanActual();
+      cargarPlanActual()
     } else {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [user]);
+  }, [user])
 
   const cargarPlanActual = async () => {
     try {
-      setError(null);
-      const response = await api.get('/suscripciones/planes/actual/');
+      setError(null)
+      const response = await api.get('/suscripciones/planes/actual/')
 
       if (response.data) {
-        setPlanActual(response.data);
-        setSubscriptionsEnabled(response.data.subscriptions_enabled || false);
+        setPlanActual(response.data)
+        setSubscriptionsEnabled(response.data.subscriptions_enabled || false)
       }
     } catch (err) {
-      console.error('Error cargando plan:', err);
+      console.error('Error cargando plan:', err)
       // Si hay error 401/403, no es un error real, solo significa que el usuario no tiene plan
       if (err.response?.status !== 401 && err.response?.status !== 403) {
-        setError('No se pudo cargar el plan actual');
+        setError('No se pudo cargar el plan actual')
       }
       // Por defecto usar plan gratis
-      setPlanActual({ plan: 'gratis', configuracion: PLANES.gratis });
+      setPlanActual({ plan: 'gratis', configuracion: PLANES.gratis })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Verificar si el usuario puede usar una característica
   const puedeUsar = (feature) => {
     // Si el sistema no está activado, todo es gratis
-    if (!subscriptionsEnabled) return true;
+    if (!subscriptionsEnabled) return true
 
-    if (!planActual) return false;
+    if (!planActual) return false
 
-    const config = planActual.configuracion || PLANES.gratis;
-    return config[feature] === true || config[feature] === -1;
-  };
+    const config = planActual.configuracion || PLANES.gratis
+    return config[feature] === true || config[feature] === -1
+  }
 
   // Obtener configuración del plan actual
   const getPlanConfig = () => {
-    if (!planActual) return PLANES.gratis;
-    return planActual.configuracion || PLANES.gratis;
-  };
+    if (!planActual) return PLANES.gratis
+    return planActual.configuracion || PLANES.gratis
+  }
 
   // Obtener nombre del plan actual
   const getPlanNombre = () => {
-    if (!planActual?.plan) return 'Gratis';
-    return PLANES[planActual.plan]?.nombre || 'Gratis';
-  };
+    if (!planActual?.plan) return 'Gratis'
+    return PLANES[planActual.plan]?.nombre || 'Gratis'
+  }
 
   // Refrescar plan después de una compra
   const refrescarPlan = async () => {
-    setLoading(true);
-    await cargarPlanActual();
-  };
+    setLoading(true)
+    await cargarPlanActual()
+  }
 
   const value = {
     planActual,
@@ -129,19 +129,15 @@ export function SubscriptionProvider({ children }) {
     getPlanNombre,
     refrescarPlan,
     PLANES,
-  };
+  }
 
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
+  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>
 }
 
 export function useSubscription() {
-  const context = useContext(SubscriptionContext);
+  const context = useContext(SubscriptionContext)
   if (!context) {
-    throw new Error('useSubscription debe usarse dentro de SubscriptionProvider');
+    throw new Error('useSubscription debe usarse dentro de SubscriptionProvider')
   }
-  return context;
+  return context
 }

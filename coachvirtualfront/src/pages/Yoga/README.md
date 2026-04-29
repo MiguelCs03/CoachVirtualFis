@@ -22,6 +22,7 @@ src/pages/Yoga/
 **Objetivo:** Mantener una postura erguida con brazos extendidos hacia arriba.
 
 **Ángulos validados:**
+
 - Brazo izquierdo: 160-200°
 - Brazo derecho: 160-200°
 - Hombro izquierdo: 170-190°
@@ -30,6 +31,7 @@ src/pages/Yoga/
 - Cintura derecha: 170-190°
 
 **Landmarks utilizados:**
+
 ```javascript
 // Brazos
 11 (hombro izq) - 13 (codo izq) - 15 (muñeca izq)
@@ -51,11 +53,13 @@ src/pages/Yoga/
 **Objetivo:** Inclinación lateral formando un triángulo con el cuerpo.
 
 **Ángulos validados:**
+
 - Brazo izquierdo: 165-195°
 - Brazo derecho: 165-195°
 - Espalda: 110-150°
 
 **Landmarks utilizados:**
+
 ```javascript
 // Brazos (completamente extendidos)
 11 (hombro izq) - 13 (codo izq) - 15 (muñeca izq)
@@ -72,12 +76,14 @@ src/pages/Yoga/
 **Objetivo:** Posición de estocada con brazos extendidos.
 
 **Ángulos validados:**
+
 - Brazo izquierdo: 170-190°
 - Brazo derecho: 170-190°
 - Pierna izquierda (doblada): 110-130°
 - Pierna derecha (recta): 170-190°
 
 **Landmarks utilizados:**
+
 ```javascript
 // Brazos
 11 (hombro izq) - 13 (codo izq) - 15 (muñeca izq)
@@ -135,6 +141,7 @@ const [angles, setAngles] = useState({...});           // Ángulos actuales
 ### Tiempo Objetivo
 
 El usuario puede seleccionar:
+
 - 10 segundos
 - 20 segundos
 - 30 segundos
@@ -146,13 +153,13 @@ El usuario puede seleccionar:
 // Solo cuenta si TODAS las validaciones pasan
 if (allCorrect) {
   if (!startTimeRef.current) {
-    startTimeRef.current = now; // Inicia
+    startTimeRef.current = now // Inicia
   }
-  const elapsed = Math.floor((now - startTimeRef.current) / 1000);
-  setSecondsHeld(elapsed);
+  const elapsed = Math.floor((now - startTimeRef.current) / 1000)
+  setSecondsHeld(elapsed)
 } else {
-  startTimeRef.current = null; // Reset
-  setSecondsHeld(0);
+  startTimeRef.current = null // Reset
+  setSecondsHeld(0)
 }
 ```
 
@@ -168,11 +175,11 @@ if (allCorrect) {
 
 ```javascript
 // Acceder desde el menú principal
-<Link to="/yoga">Yoga</Link>
+;<Link to="/yoga">Yoga</Link>
 
 // O directamente a una postura específica
-import Tadasana from './pages/Yoga/Tadasana';
-<Tadasana timer={30} />
+import Tadasana from './pages/Yoga/Tadasana'
+;<Tadasana timer={30} />
 ```
 
 ## Rutas
@@ -196,16 +203,16 @@ import Tadasana from './pages/Yoga/Tadasana';
 
 ## Diferencias con src2
 
-| Aspecto | src2 (Legacy) | src (Moderno) |
-|---------|---------------|---------------|
-| MediaPipe | @mediapipe/pose | @mediapipe/tasks-vision |
-| React | Refs + useEffect | Hooks modernos |
-| Estilos | Inline styles | Tailwind CSS |
-| UI | Básica | Gradientes y sombras |
-| Feedback | Solo visual | Visual + Audio |
-| Timer | Variable global | useState + useRef |
-| Idioma | Inglés | Español |
-| Routing | Componentes separados | Selector unificado |
+| Aspecto   | src2 (Legacy)         | src (Moderno)           |
+| --------- | --------------------- | ----------------------- |
+| MediaPipe | @mediapipe/pose       | @mediapipe/tasks-vision |
+| React     | Refs + useEffect      | Hooks modernos          |
+| Estilos   | Inline styles         | Tailwind CSS            |
+| UI        | Básica                | Gradientes y sombras    |
+| Feedback  | Solo visual           | Visual + Audio          |
+| Timer     | Variable global       | useState + useRef       |
+| Idioma    | Inglés                | Español                 |
+| Routing   | Componentes separados | Selector unificado      |
 
 ## Autor
 

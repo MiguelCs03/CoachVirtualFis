@@ -1,52 +1,52 @@
-import { useState, useRef } from 'react';
-import PoseDetector from './PoseDetector';
-import { calculateBodyAngles } from '../../utils/poseUtils';
-import { useSpeech } from '../../utils/useSpeech';
+import { useState, useRef } from 'react'
+import PoseDetector from './PoseDetector'
+import { calculateBodyAngles } from '../../utils/poseUtils'
+import { useSpeech } from '../../utils/useSpeech'
 
 export default function BicepsCurlTrainer() {
-  const [repCount, setRepCount] = useState(0);
-  const [stage, setStage] = useState('down');
-  const [feedback, setFeedback] = useState('Comienza');
-  
-  const { speak } = useSpeech({ lang: 'es-ES' });
-  const errorFlagRef = useRef(false);
+  const [repCount, setRepCount] = useState(0)
+  const [stage, setStage] = useState('down')
+  const [feedback, setFeedback] = useState('Comienza')
+
+  const { speak } = useSpeech({ lang: 'es-ES' })
+  const errorFlagRef = useRef(false)
 
   // Umbrales de ángulo
-  const FLEXED_THRESHOLD = 60;
-  const EXTENDED_THRESHOLD = 160;
-  const SHOULDER_ERROR_THRESHOLD = 45;
+  const FLEXED_THRESHOLD = 60
+  const EXTENDED_THRESHOLD = 160
+  const SHOULDER_ERROR_THRESHOLD = 45
 
   const handlePoseDetected = (landmarks) => {
-    const angles = calculateBodyAngles(landmarks);
-    const { rightElbow, rightShoulder } = angles;
+    const angles = calculateBodyAngles(landmarks)
+    const { rightElbow, rightShoulder } = angles
 
     // Regla de Error: Hombro
     if (rightShoulder > SHOULDER_ERROR_THRESHOLD && !errorFlagRef.current) {
-      setFeedback('¡No muevas el hombro!');
-      speak('¡No muevas el hombro, mantén el codo fijo!');
-      errorFlagRef.current = true;
+      setFeedback('¡No muevas el hombro!')
+      speak('¡No muevas el hombro, mantén el codo fijo!')
+      errorFlagRef.current = true
     }
 
     // Lógica de Estado 'down' (brazo bajado)
     if (stage === 'down') {
       if (rightElbow < FLEXED_THRESHOLD) {
-        setStage('up');
-        setFeedback('¡Excelente subida!');
-        errorFlagRef.current = false;
+        setStage('up')
+        setFeedback('¡Excelente subida!')
+        errorFlagRef.current = false
       }
     }
 
     // Lógica de Estado 'up' (brazo flexionado)
     if (stage === 'up') {
       if (rightElbow > EXTENDED_THRESHOLD) {
-        setStage('down');
-        const newCount = repCount + 1;
-        setRepCount(newCount);
-        setFeedback('Repetición completa');
-        speak(newCount.toString());
+        setStage('down')
+        const newCount = repCount + 1
+        setRepCount(newCount)
+        setFeedback('Repetición completa')
+        speak(newCount.toString())
       }
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -67,40 +67,35 @@ export default function BicepsCurlTrainer() {
           <div className="space-y-6">
             {/* Contador de Repeticiones */}
             <div className="bg-white rounded-lg shadow-xl p-6">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                Repeticiones
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">Repeticiones</h2>
               <div className="text-center">
-                <div className="text-6xl font-bold text-indigo-600">
-                  {repCount}
-                </div>
+                <div className="text-6xl font-bold text-indigo-600">{repCount}</div>
                 <div className="text-sm text-gray-500 mt-2">
-                  Etapa: <span className="font-semibold">{stage === 'up' ? 'Arriba' : 'Abajo'}</span>
+                  Etapa:{' '}
+                  <span className="font-semibold">{stage === 'up' ? 'Arriba' : 'Abajo'}</span>
                 </div>
               </div>
             </div>
 
             {/* Feedback */}
             <div className="bg-white rounded-lg shadow-xl p-6">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                Feedback
-              </h2>
-              <div className={`text-center p-4 rounded-lg ${
-                feedback.includes('No muevas') 
-                  ? 'bg-red-100 text-red-700' 
-                  : feedback.includes('Excelente') 
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-blue-100 text-blue-700'
-              }`}>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">Feedback</h2>
+              <div
+                className={`text-center p-4 rounded-lg ${
+                  feedback.includes('No muevas')
+                    ? 'bg-red-100 text-red-700'
+                    : feedback.includes('Excelente')
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-blue-100 text-blue-700'
+                }`}
+              >
                 <p className="text-lg font-medium">{feedback}</p>
               </div>
             </div>
 
             {/* Instrucciones */}
             <div className="bg-white rounded-lg shadow-xl p-6">
-              <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                📋 Instrucciones
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4">📋 Instrucciones</h2>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start">
                   <span className="text-indigo-500 mr-2">•</span>
@@ -124,5 +119,5 @@ export default function BicepsCurlTrainer() {
         </div>
       </div>
     </div>
-  );
+  )
 }

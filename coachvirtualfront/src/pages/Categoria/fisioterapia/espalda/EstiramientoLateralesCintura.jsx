@@ -1,7 +1,7 @@
-import { useState, useRef, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
-import YogaPoseDetector from '../../../Yoga/YogaPoseDetector';
-import { useSpeech } from '../../../../utils/useSpeech';
+import { useState, useRef, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
+import YogaPoseDetector from '../../../Yoga/YogaPoseDetector'
+import { useSpeech } from '../../../../utils/useSpeech'
 
 /**
  * Lógica Biomecánica:
@@ -10,134 +10,132 @@ import { useSpeech } from '../../../../utils/useSpeech';
  * 3. Fases: Centro -> Inclinación (Dcha/Izq) -> Hold (Estiramiento) -> Retorno.
  */
 export default function EstiramientoLateralesCintura() {
-  const [started, setStarted] = useState(false);
-  const location = useLocation();
-  const passedImage = location?.state?.imageUrl || null;
-  const passedNombre = location?.state?.nombre || 'Estiramiento laterales de cintura';
+  const [started, setStarted] = useState(false)
+  const location = useLocation()
+  const passedImage = location?.state?.imageUrl || null
+  const passedNombre = location?.state?.nombre || 'Estiramiento laterales de cintura'
 
   // Estados de lógica
-  const [count, setCount] = useState(0); // Total de estiramientos completados
-  const [feedback, setFeedback] = useState('Ponte en posición neutral');
-  const [direction, setDirection] = useState('center'); // 'center', 'right', 'left'
-  const [spineTilt, setSpineTilt] = useState(0); // Grados de inclinación (0 = recto)
+  const [count, setCount] = useState(0) // Total de estiramientos completados
+  const [feedback, setFeedback] = useState('Ponte en posición neutral')
+  const [direction, setDirection] = useState('center') // 'center', 'right', 'left'
+  const [spineTilt, setSpineTilt] = useState(0) // Grados de inclinación (0 = recto)
 
   // Refs para control de flujo
-  const holdTimerRef = useRef(null);
-  const lastSpokenRef = useRef(0); // Para evitar spam de voz
-  const { speak } = useSpeech({ lang: 'es-ES' });
+  const holdTimerRef = useRef(null)
+  const lastSpokenRef = useRef(0) // Para evitar spam de voz
+  const { speak } = useSpeech({ lang: 'es-ES' })
 
   // --- CONSTANTES FISIOTERAPÉUTICAS ---
-  const MIN_TILT = 15;      // Grados mínimos para considerar que empezó el estiramiento
-  const GOOD_TILT = 25;     // Grados para un estiramiento efectivo
-  const MAX_TILT = 45;      // Límite de seguridad (evitar hernias/compresión excesiva)
-  const HOLD_TIME = 2000;   // ms que se debe mantener el estiramiento (es un ejercicio de movilidad)
+  const MIN_TILT = 15 // Grados mínimos para considerar que empezó el estiramiento
+  const GOOD_TILT = 25 // Grados para un estiramiento efectivo
+  const MAX_TILT = 45 // Límite de seguridad (evitar hernias/compresión excesiva)
+  const HOLD_TIME = 2000 // ms que se debe mantener el estiramiento (es un ejercicio de movilidad)
 
   // Cálculo matemático de la inclinación del tronco
   const calculateSpineAngle = (landmarks) => {
-    if (!landmarks) return 0;
+    if (!landmarks) return 0
 
     // Índices MediaPipe: 11/12 (Hombros), 23/24 (Caderas)
-    const leftShoulder = landmarks[11];
-    const rightShoulder = landmarks[12];
-    const leftHip = landmarks[23];
-    const rightHip = landmarks[24];
+    const leftShoulder = landmarks[11]
+    const rightShoulder = landmarks[12]
+    const leftHip = landmarks[23]
+    const rightHip = landmarks[24]
 
     // Puntos medios
-    const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
-    const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
-    const midHipX = (leftHip.x + rightHip.x) / 2;
-    const midHipY = (leftHip.y + rightHip.y) / 2;
+    const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2
+    const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2
+    const midHipX = (leftHip.x + rightHip.x) / 2
+    const midHipY = (leftHip.y + rightHip.y) / 2
 
     // Calcular ángulo en grados respecto a la vertical
     // Math.atan2 devuelve radianes. Convertimos a grados.
     // Delta Y es negativo porque en visión por computador Y crece hacia abajo.
-    const deltaX = midShoulderX - midHipX;
-    const deltaY = midHipY - midShoulderY; // Invertido para que sea cartesiano estándar
+    const deltaX = midShoulderX - midHipX
+    const deltaY = midHipY - midShoulderY // Invertido para que sea cartesiano estándar
 
-    let angleRad = Math.atan2(deltaX, deltaY);
-    let angleDeg = angleRad * (180 / Math.PI);
+    let angleRad = Math.atan2(deltaX, deltaY)
+    let angleDeg = angleRad * (180 / Math.PI)
 
     // angleDeg será aprox 0 cuando está recto.
     // Positivo = Inclinación Derecha (según vista cámara espejo)
     // Negativo = Inclinación Izquierda
-    return Math.round(angleDeg);
-  };
+    return Math.round(angleDeg)
+  }
 
   const handlePoseDetected = (landmarks) => {
-    const tilt = calculateSpineAngle(landmarks);
-    setSpineTilt(tilt);
-    const absTilt = Math.abs(tilt);
+    const tilt = calculateSpineAngle(landmarks)
+    setSpineTilt(tilt)
+    const absTilt = Math.abs(tilt)
 
     // Detección de dirección actual
-    let currentDir = 'center';
-    if (tilt > MIN_TILT) currentDir = 'right';
-    if (tilt < -MIN_TILT) currentDir = 'left';
+    let currentDir = 'center'
+    if (tilt > MIN_TILT) currentDir = 'right'
+    if (tilt < -MIN_TILT) currentDir = 'left'
 
     // Máquina de Estados
     if (direction === 'center') {
       if (absTilt > MIN_TILT) {
-        setDirection(currentDir);
-        const side = currentDir === 'right' ? 'derecha' : 'izquierda';
-        setFeedback(`Estirando a la ${side}... mantén`);
-        speak(`Mantén a la ${side}`);
+        setDirection(currentDir)
+        const side = currentDir === 'right' ? 'derecha' : 'izquierda'
+        setFeedback(`Estirando a la ${side}... mantén`)
+        speak(`Mantén a la ${side}`)
 
         // Iniciar timer de "Hold"
-        holdTimerRef.current = Date.now();
+        holdTimerRef.current = Date.now()
       } else {
-        setFeedback('Posición neutral. Inclínate a un lado.');
+        setFeedback('Posición neutral. Inclínate a un lado.')
       }
-    }
-    else if (direction === 'right' || direction === 'left') {
+    } else if (direction === 'right' || direction === 'left') {
       // Verificar si mantiene el estiramiento
-      const isGoodStretch = (direction === 'right' && tilt > GOOD_TILT) ||
-        (direction === 'left' && tilt < -GOOD_TILT);
+      const isGoodStretch =
+        (direction === 'right' && tilt > GOOD_TILT) || (direction === 'left' && tilt < -GOOD_TILT)
 
       // Verificar si regresó al centro
       if (absTilt < 10) {
         // Si rompió la postura antes de tiempo
-        setDirection('center');
-        setFeedback('Regresaste al centro');
-        holdTimerRef.current = null;
-        return;
+        setDirection('center')
+        setFeedback('Regresaste al centro')
+        holdTimerRef.current = null
+        return
       }
 
       if (isGoodStretch) {
         // Calcular tiempo sostenido
-        const elapsed = Date.now() - (holdTimerRef.current || Date.now());
+        const elapsed = Date.now() - (holdTimerRef.current || Date.now())
 
         if (elapsed > HOLD_TIME) {
           // ¡Éxito!
-          speak('¡Bien! Regresa al centro');
-          setFeedback('✅ ¡Excelente! Regresa suavemente');
-          setCount(c => c + 1);
-          setDirection('waiting_reset'); // Estado temporal para obligar a volver al centro
-          holdTimerRef.current = null;
+          speak('¡Bien! Regresa al centro')
+          setFeedback('✅ ¡Excelente! Regresa suavemente')
+          setCount((c) => c + 1)
+          setDirection('waiting_reset') // Estado temporal para obligar a volver al centro
+          holdTimerRef.current = null
         } else {
           // Feedback de progreso visual
-          const progress = Math.min(100, (elapsed / HOLD_TIME) * 100);
-          setFeedback(`Sostén... ${Math.round(progress)}%`);
+          const progress = Math.min(100, (elapsed / HOLD_TIME) * 100)
+          setFeedback(`Sostén... ${Math.round(progress)}%`)
         }
       } else {
         // Está inclinado pero no lo suficiente
-        setFeedback('Inclínate un poco más para estirar bien');
+        setFeedback('Inclínate un poco más para estirar bien')
       }
-    }
-    else if (direction === 'waiting_reset') {
+    } else if (direction === 'waiting_reset') {
       if (absTilt < 8) {
-        setDirection('center');
-        setFeedback('Listo para el siguiente');
+        setDirection('center')
+        setFeedback('Listo para el siguiente')
       }
     }
-  };
+  }
 
   const getProgressColor = () => {
-    if (direction === 'center') return 'bg-gray-200';
-    if (direction === 'waiting_reset') return 'bg-green-500';
-    const absTilt = Math.abs(spineTilt);
-    if (absTilt > GOOD_TILT) return 'bg-blue-600'; // Rango óptimo
-    if (absTilt > MAX_TILT) return 'bg-red-500';   // Peligroso
-    return 'bg-yellow-400'; // Iniciando
-  };
+    if (direction === 'center') return 'bg-gray-200'
+    if (direction === 'waiting_reset') return 'bg-green-500'
+    const absTilt = Math.abs(spineTilt)
+    if (absTilt > GOOD_TILT) return 'bg-blue-600' // Rango óptimo
+    if (absTilt > MAX_TILT) return 'bg-red-500' // Peligroso
+    return 'bg-yellow-400' // Iniciando
+  }
 
   if (!started) {
     return (
@@ -147,7 +145,11 @@ export default function EstiramientoLateralesCintura() {
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="h-64 bg-gray-100 flex items-center justify-center">
               {passedImage ? (
-                <img src={passedImage} alt={passedNombre} className="w-full h-full object-contain bg-white" />
+                <img
+                  src={passedImage}
+                  alt={passedNombre}
+                  className="w-full h-full object-contain bg-white"
+                />
               ) : (
                 <div className="text-6xl">🧘</div>
               )}
@@ -160,16 +162,20 @@ export default function EstiramientoLateralesCintura() {
                 <li>Mejora la movilidad de la caja torácica.</li>
               </ul>
               <p className="text-sm text-gray-500 mb-6 bg-blue-50 p-3 rounded border-l-4 border-blue-500">
-                ℹ️ <strong>Instrucción:</strong> Mantén las caderas quietas y solo mueve el tronco hacia los lados. La IA detectará la inclinación de tu columna.
+                ℹ️ <strong>Instrucción:</strong> Mantén las caderas quietas y solo mueve el tronco
+                hacia los lados. La IA detectará la inclinación de tu columna.
               </p>
-              <button onClick={() => setStarted(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-all shadow-md">
+              <button
+                onClick={() => setStarted(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-all shadow-md"
+              >
                 Iniciar Sesión de Movilidad
               </button>
             </div>
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -181,7 +187,10 @@ export default function EstiramientoLateralesCintura() {
             <h2 className="text-2xl font-bold text-gray-800">{passedNombre}</h2>
             <p className="text-gray-500 text-sm">Fisioterapia asistida por IA</p>
           </div>
-          <button onClick={() => setStarted(false)} className="text-red-500 hover:bg-red-50 px-4 py-2 rounded font-medium transition-colors">
+          <button
+            onClick={() => setStarted(false)}
+            className="text-red-500 hover:bg-red-50 px-4 py-2 rounded font-medium transition-colors"
+          >
             Finalizar
           </button>
         </div>
@@ -204,10 +213,14 @@ export default function EstiramientoLateralesCintura() {
 
           {/* Panel de Control y Métricas */}
           <div className="space-y-6">
-
             {/* Feedback Principal */}
-            <div className={`rounded-2xl p-6 shadow-lg text-center transition-colors duration-300 ${direction === 'waiting_reset' ? 'bg-green-100 text-green-800' : 'bg-white text-gray-800'
-              }`}>
+            <div
+              className={`rounded-2xl p-6 shadow-lg text-center transition-colors duration-300 ${
+                direction === 'waiting_reset'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-white text-gray-800'
+              }`}
+            >
               <div className="text-5xl mb-2">
                 {direction === 'center' && '🧍'}
                 {direction === 'right' && '➡️'}
@@ -222,7 +235,9 @@ export default function EstiramientoLateralesCintura() {
 
             {/* Métricas */}
             <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h4 className="text-gray-500 font-medium text-sm uppercase tracking-wider mb-4">Progreso de la Sesión</h4>
+              <h4 className="text-gray-500 font-medium text-sm uppercase tracking-wider mb-4">
+                Progreso de la Sesión
+              </h4>
 
               <div className="flex justify-between items-end mb-2">
                 <span className="text-4xl font-bold text-blue-600">{count}</span>
@@ -238,26 +253,33 @@ export default function EstiramientoLateralesCintura() {
 
             {/* Guía de Ángulos */}
             <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h4 className="text-gray-500 font-medium text-sm uppercase tracking-wider mb-4">Calidad del Rango</h4>
+              <h4 className="text-gray-500 font-medium text-sm uppercase tracking-wider mb-4">
+                Calidad del Rango
+              </h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span>Neutral (0-10°)</span>
-                  <div className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) < 10 ? 'bg-green-500 ring-2 ring-green-200' : 'bg-gray-200'}`}></div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) < 10 ? 'bg-green-500 ring-2 ring-green-200' : 'bg-gray-200'}`}
+                  ></div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Estiramiento (15-40°)</span>
-                  <div className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) >= 15 && Math.abs(spineTilt) <= 40 ? 'bg-blue-500 ring-2 ring-blue-200' : 'bg-gray-200'}`}></div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) >= 15 && Math.abs(spineTilt) <= 40 ? 'bg-blue-500 ring-2 ring-blue-200' : 'bg-gray-200'}`}
+                  ></div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Excesivo (45°)</span>
-                  <div className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) > 45 ? 'bg-red-500 ring-2 ring-red-200' : 'bg-gray-200'}`}></div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${Math.abs(spineTilt) > 45 ? 'bg-red-500 ring-2 ring-red-200' : 'bg-gray-200'}`}
+                  ></div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

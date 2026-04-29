@@ -11,7 +11,7 @@ Requiere variables en .env o entorno:
 
 import time
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 import requests
 from decouple import config
@@ -26,7 +26,7 @@ class GoogleFitClient:
     CACHE_STATS_KEY = "google_fit_stats"
     CACHE_STATS_TTL = 15  # segundos
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client_id = config("GOOGLE_FIT_CLIENT_ID", default="")
         self.client_secret = config("GOOGLE_FIT_CLIENT_SECRET", default="")
         self.refresh_token = config("GOOGLE_FIT_REFRESH_TOKEN", default="")
@@ -38,7 +38,7 @@ class GoogleFitClient:
         if not self.access_token:
             raise ValueError("Falta GOOGLE_FIT_ACCESS_TOKEN en entorno o cache")
 
-    def _headers(self) -> Dict[str, str]:
+    def _headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
@@ -69,7 +69,7 @@ class GoogleFitClient:
         except requests.RequestException:
             return False
 
-    def _post_aggregate(self, body: Dict[str, Any]) -> Dict[str, Any]:
+    def _post_aggregate(self, body: dict[str, Any]) -> dict[str, Any]:
         # primer intento con el access_token actual
         r = requests.post(self.AGGREGATE_URL, json=body, headers=self._headers(), timeout=20)
         if r.status_code == 401:
@@ -80,12 +80,12 @@ class GoogleFitClient:
         return r.json()
 
     @staticmethod
-    def _start_end_today_ms():
+    def _start_end_today_ms() -> tuple[int, int]:
         now = datetime.now()
         start = datetime(now.year, now.month, now.day)
         return int(start.timestamp() * 1000), int(time.time() * 1000)
 
-    def get_today_stats(self) -> Dict[str, Any]:
+    def get_today_stats(self) -> dict[str, Any]:
         # 1) Intentar servir desde cache inmediato para reducir latencia percibida
         cached = cache.get(self.CACHE_STATS_KEY)
         if cached:

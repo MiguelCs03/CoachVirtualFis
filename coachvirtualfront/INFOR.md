@@ -7,6 +7,7 @@ nuevos en el proyecto.
 ---
 
 ## Resumen rápido
+
 - Framework: React (con Vite)
 - Estilos: Tailwind CSS
 - Peticiones HTTP: `axios` (archivo central: `src/api/api.js`)
@@ -17,11 +18,11 @@ nuevos en el proyecto.
 ## Estructura principal (carpeta `src/`)
 
 - `api/` : helpers para llamadas HTTP (ya incluido `src/api/api.js`). Aquí se centraliza la configuración
-	de `axios` y el manejo de tokens (refresh automático).
+  de `axios` y el manejo de tokens (refresh automático).
 - `auth/`: Provider y hooks para autenticación (`AuthProvider.jsx`, `useAuth.js`). Maneja estado global
-	de sesión y permisos.
+  de sesión y permisos.
 - `components/`: componentes reutilizables (Sidebar, Header, botones, etc.). Crea componentes pequeños y
-	componerlos en vistas más grandes.
+  componerlos en vistas más grandes.
 - `pages/`: vistas principales de la app (cada ruta suele mapear a un componente en `pages/`).
 - `routes/`: definición de rutas y guards (`AppRoutes.jsx`, `CategoryGate.jsx`).
 - `services/`: integraciones externas, utilidades para consumir APIs de terceros (IA, cloudinary, etc.).
@@ -33,7 +34,7 @@ nuevos en el proyecto.
 
 ## Scripts útiles (desde `coachvirtualfront`)
 
-```powershell
+````powershell
 # instalar dependencias
 npm install
 
@@ -70,7 +71,7 @@ const { data } = await api.get('/rutinas/');
 
 // POST /rutinas/
 await api.post('/rutinas/', { nombre: 'Mi rutina', ejercicios: [] });
-```
+````
 
 ---
 
@@ -86,9 +87,9 @@ Recomendación mínima para mantener consistencia:
 Ejemplo de ruta:
 
 ```jsx
-import MiPagina from '../pages/MiPagina/MiPagina';
+import MiPagina from '../pages/MiPagina/MiPagina'
 // ...
-<Route path="/mi-pagina" element={<MiPagina />} />
+;<Route path="/mi-pagina" element={<MiPagina />} />
 ```
 
 ---
@@ -113,7 +114,7 @@ Ejemplo de uso:
 
 ```jsx
 <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-6 text-white">
-	Hola mundo
+  Hola mundo
 </div>
 ```
 

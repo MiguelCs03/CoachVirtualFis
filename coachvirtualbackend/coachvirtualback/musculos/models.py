@@ -15,11 +15,7 @@ class Musculo(models.Model):
     url = models.URLField()
 
     # ✅ Relación Tipo -> Musculo (1 Tipo tiene muchos músculos)
-    tipo = models.ForeignKey(
-        Tipo,
-        on_delete=models.CASCADE,
-        related_name="musculos"
-    )
+    tipo = models.ForeignKey(Tipo, on_delete=models.CASCADE, related_name="musculos")
 
     def __str__(self):
         return self.nombre
@@ -38,18 +34,10 @@ class DetalleMusculo(models.Model):
     porcentaje = models.CharField(max_length=255)
 
     # ✅ Musculo -> DetalleMusculo (1 musculo tiene muchos detalles)
-    musculo = models.ForeignKey(
-        Musculo,
-        on_delete=models.CASCADE,
-        related_name="detalles"
-    )
+    musculo = models.ForeignKey(Musculo, on_delete=models.CASCADE, related_name="detalles")
 
     # ✅ Ejercicio -> DetalleMusculo (1 ejercicio aparece en muchos detalles)
-    ejercicio = models.ForeignKey(
-        Ejercicio,
-        on_delete=models.CASCADE,
-        related_name="detalles_musculo"
-    )
+    ejercicio = models.ForeignKey(Ejercicio, on_delete=models.CASCADE, related_name="detalles_musculo")
 
     class Meta:
         # Evita duplicados del mismo musculo-ejercicio

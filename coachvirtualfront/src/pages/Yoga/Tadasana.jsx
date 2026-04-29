@@ -1,71 +1,71 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import YogaPoseDetector from './YogaPoseDetector';
-import { calculateAngle } from '../../utils/poseUtils';
-import { useSpeech } from '../../utils/useSpeech';
+import { useState, useRef, useEffect, useMemo } from 'react'
+import YogaPoseDetector from './YogaPoseDetector'
+import { calculateAngle } from '../../utils/poseUtils'
+import { useSpeech } from '../../utils/useSpeech'
 
 export default function Tadasana({ timer = 10 }) {
-  const [secondsHeld, setSecondsHeld] = useState(0);
-  const [isCorrectPose, setIsCorrectPose] = useState(false);
-  const [feedback, setFeedback] = useState('Intenta imitar la postura');
-  const [completed, setCompleted] = useState(false);
-  
+  const [secondsHeld, setSecondsHeld] = useState(0)
+  const [isCorrectPose, setIsCorrectPose] = useState(false)
+  const [feedback, setFeedback] = useState('Intenta imitar la postura')
+  const [completed, setCompleted] = useState(false)
+
   const [angles, setAngles] = useState({
     leftWaist: 0,
     rightWaist: 0,
     leftShoulder: 0,
     rightShoulder: 0,
     leftHand: 0,
-    rightHand: 0
-  });
+    rightHand: 0,
+  })
 
-  const { speak } = useSpeech({ lang: 'es-ES' });
-  const startTimeRef = useRef(null);
-  const lastUpdateRef = useRef(0);
+  const { speak } = useSpeech({ lang: 'es-ES' })
+  const startTimeRef = useRef(null)
+  const lastUpdateRef = useRef(0)
 
   useEffect(() => {
     // Reset cuando cambia el timer
-    setSecondsHeld(0);
-    setCompleted(false);
-    startTimeRef.current = null;
-  }, [timer]);
+    setSecondsHeld(0)
+    setCompleted(false)
+    startTimeRef.current = null
+  }, [timer])
 
   const handlePoseDetected = (landmarks) => {
     // Calcular todos los ángulos necesarios
     const leftHandAngle = calculateAngle(
       landmarks[11], // hombro izquierdo
       landmarks[13], // codo izquierdo
-      landmarks[15]  // muñeca izquierda
-    );
+      landmarks[15] // muñeca izquierda
+    )
 
     const rightHandAngle = calculateAngle(
       landmarks[12], // hombro derecho
       landmarks[14], // codo derecho
-      landmarks[16]  // muñeca derecha
-    );
+      landmarks[16] // muñeca derecha
+    )
 
     const leftShoulderAngle = calculateAngle(
       landmarks[13], // codo izquierdo
       landmarks[11], // hombro izquierdo
-      landmarks[23]  // cadera izquierda
-    );
+      landmarks[23] // cadera izquierda
+    )
 
     const rightShoulderAngle = calculateAngle(
       landmarks[14], // codo derecho
       landmarks[12], // hombro derecho
-      landmarks[24]  // cadera derecha
-    );
+      landmarks[24] // cadera derecha
+    )
 
     const leftWaistAngle = calculateAngle(
       landmarks[12], // hombro derecho
       landmarks[24], // cadera derecha
-      landmarks[28]  // tobillo derecho
-    );
+      landmarks[28] // tobillo derecho
+    )
 
     const rightWaistAngle = calculateAngle(
       landmarks[11], // hombro izquierdo
       landmarks[23], // cadera izquierda
-      landmarks[27]  // tobillo izquierdo
-    );
+      landmarks[27] // tobillo izquierdo
+    )
 
     // Actualizar ángulos para visualización
     setAngles({
@@ -74,54 +74,58 @@ export default function Tadasana({ timer = 10 }) {
       leftShoulder: Math.round(leftShoulderAngle),
       rightShoulder: Math.round(rightShoulderAngle),
       leftWaist: Math.round(leftWaistAngle),
-      rightWaist: Math.round(rightWaistAngle)
-    });
+      rightWaist: Math.round(rightWaistAngle),
+    })
 
     // Validar rangos
-    const inRangeLeftWaist = leftWaistAngle >= 170 && leftWaistAngle <= 190;
-    const inRangeRightWaist = rightWaistAngle >= 170 && rightWaistAngle <= 190;
-    const inRangeLeftShoulder = leftShoulderAngle >= 170 && leftShoulderAngle <= 190;
-    const inRangeRightShoulder = rightShoulderAngle >= 170 && rightShoulderAngle <= 190;
-    const inRangeLeftHand = leftHandAngle >= 160 && leftHandAngle <= 200;
-    const inRangeRightHand = rightHandAngle >= 160 && rightHandAngle <= 200;
+    const inRangeLeftWaist = leftWaistAngle >= 170 && leftWaistAngle <= 190
+    const inRangeRightWaist = rightWaistAngle >= 170 && rightWaistAngle <= 190
+    const inRangeLeftShoulder = leftShoulderAngle >= 170 && leftShoulderAngle <= 190
+    const inRangeRightShoulder = rightShoulderAngle >= 170 && rightShoulderAngle <= 190
+    const inRangeLeftHand = leftHandAngle >= 160 && leftHandAngle <= 200
+    const inRangeRightHand = rightHandAngle >= 160 && rightHandAngle <= 200
 
-    const allCorrect = inRangeLeftWaist && inRangeRightWaist && 
-                       inRangeLeftShoulder && inRangeRightShoulder &&
-                       inRangeLeftHand && inRangeRightHand;
+    const allCorrect =
+      inRangeLeftWaist &&
+      inRangeRightWaist &&
+      inRangeLeftShoulder &&
+      inRangeRightShoulder &&
+      inRangeLeftHand &&
+      inRangeRightHand
 
-    setIsCorrectPose(allCorrect);
+    setIsCorrectPose(allCorrect)
 
     // Lógica del timer
-    const now = Date.now();
+    const now = Date.now()
     if (allCorrect) {
       if (!startTimeRef.current) {
-        startTimeRef.current = now;
-        setFeedback('¡Excelente! Mantén la postura');
+        startTimeRef.current = now
+        setFeedback('¡Excelente! Mantén la postura')
       }
-      
-      const elapsed = Math.floor((now - startTimeRef.current) / 1000);
-      setSecondsHeld(elapsed);
+
+      const elapsed = Math.floor((now - startTimeRef.current) / 1000)
+      setSecondsHeld(elapsed)
 
       // Completar cuando alcanza el tiempo objetivo
       if (elapsed >= timer && !completed) {
-        setCompleted(true);
-        setFeedback(`¡Felicidades! Completaste ${timer} segundos en Tadasana`);
-        speak(`Has realizado Tadasana por ${timer} segundos`);
+        setCompleted(true)
+        setFeedback(`¡Felicidades! Completaste ${timer} segundos en Tadasana`)
+        speak(`Has realizado Tadasana por ${timer} segundos`)
       }
     } else {
       // Reset si pierde la postura
       if (startTimeRef.current && now - lastUpdateRef.current > 100) {
-        startTimeRef.current = null;
-        setSecondsHeld(0);
-        setFeedback('Ajusta tu postura');
-        lastUpdateRef.current = now;
+        startTimeRef.current = null
+        setSecondsHeld(0)
+        setFeedback('Ajusta tu postura')
+        lastUpdateRef.current = now
       }
     }
-  };
+  }
 
   const getAngleColor = (angle, min, max) => {
-    return angle >= min && angle <= max ? 'text-green-500' : 'text-red-500';
-  };
+    return angle >= min && angle <= max ? 'text-green-500' : 'text-red-500'
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-6">
@@ -134,16 +138,43 @@ export default function Tadasana({ timer = 10 }) {
           {/* Detector de Pose */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-              <YogaPoseDetector 
+              <YogaPoseDetector
                 onPoseDetected={handlePoseDetected}
-                highlightedAngles={useMemo(() => [
-                  { indices: [11, 13, 15], angle: angles.leftHand, isValid: angles.leftHand >= 160 && angles.leftHand <= 200 },
-                  { indices: [12, 14, 16], angle: angles.rightHand, isValid: angles.rightHand >= 160 && angles.rightHand <= 200 },
-                  { indices: [13, 11, 23], angle: angles.leftShoulder, isValid: angles.leftShoulder >= 170 && angles.leftShoulder <= 190 },
-                  { indices: [14, 12, 24], angle: angles.rightShoulder, isValid: angles.rightShoulder >= 170 && angles.rightShoulder <= 190 },
-                  { indices: [12, 24, 28], angle: angles.leftWaist, isValid: angles.leftWaist >= 170 && angles.leftWaist <= 190 },
-                  { indices: [11, 23, 27], angle: angles.rightWaist, isValid: angles.rightWaist >= 170 && angles.rightWaist <= 190 },
-                ], [angles])}
+                highlightedAngles={useMemo(
+                  () => [
+                    {
+                      indices: [11, 13, 15],
+                      angle: angles.leftHand,
+                      isValid: angles.leftHand >= 160 && angles.leftHand <= 200,
+                    },
+                    {
+                      indices: [12, 14, 16],
+                      angle: angles.rightHand,
+                      isValid: angles.rightHand >= 160 && angles.rightHand <= 200,
+                    },
+                    {
+                      indices: [13, 11, 23],
+                      angle: angles.leftShoulder,
+                      isValid: angles.leftShoulder >= 170 && angles.leftShoulder <= 190,
+                    },
+                    {
+                      indices: [14, 12, 24],
+                      angle: angles.rightShoulder,
+                      isValid: angles.rightShoulder >= 170 && angles.rightShoulder <= 190,
+                    },
+                    {
+                      indices: [12, 24, 28],
+                      angle: angles.leftWaist,
+                      isValid: angles.leftWaist >= 170 && angles.leftWaist <= 190,
+                    },
+                    {
+                      indices: [11, 23, 27],
+                      angle: angles.rightWaist,
+                      isValid: angles.rightWaist >= 170 && angles.rightWaist <= 190,
+                    },
+                  ],
+                  [angles]
+                )}
               />
             </div>
 
@@ -179,7 +210,9 @@ export default function Tadasana({ timer = 10 }) {
             <div className="bg-white rounded-lg shadow-xl p-6">
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Tiempo</h2>
               <div className="text-center">
-                <div className={`text-6xl font-bold ${isCorrectPose ? 'text-green-600' : 'text-gray-400'}`}>
+                <div
+                  className={`text-6xl font-bold ${isCorrectPose ? 'text-green-600' : 'text-gray-400'}`}
+                >
                   {secondsHeld}
                 </div>
                 <div className="text-sm text-gray-500 mt-2">
@@ -197,13 +230,15 @@ export default function Tadasana({ timer = 10 }) {
             {/* Feedback */}
             <div className="bg-white rounded-lg shadow-xl p-6">
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Estado</h2>
-              <div className={`text-center p-4 rounded-lg ${
-                completed 
-                  ? 'bg-green-100 text-green-700' 
-                  : isCorrectPose 
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-yellow-100 text-yellow-700'
-              }`}>
+              <div
+                className={`text-center p-4 rounded-lg ${
+                  completed
+                    ? 'bg-green-100 text-green-700'
+                    : isCorrectPose
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                }`}
+              >
                 <p className="text-lg font-medium">{feedback}</p>
               </div>
             </div>
@@ -241,13 +276,11 @@ export default function Tadasana({ timer = 10 }) {
               <div className="flex justify-center">
                 <div className="text-6xl">🧘‍♀️</div>
               </div>
-              <p className="text-center text-sm text-gray-500 mt-2">
-                Postura de la Montaña
-              </p>
+              <p className="text-center text-sm text-gray-500 mt-2">Postura de la Montaña</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

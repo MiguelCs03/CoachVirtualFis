@@ -1,21 +1,22 @@
 from django.contrib import admin
+
 from .models import (
-    Usuario,
-    Plan,
     Alertas,
-    DetallePlan,
-    Objetivo,
-    TipoPrograma,
-    ProgramaEntrenamiento,
-    Dia,
-    TipoEntrenamiento,
-    DiasEntrenamiento,
-    Mediciones,
-    Sesion,
-    Musculo,
-    Ejercicios,
     DetalleMusculo,
+    DetallePlan,
+    Dia,
+    DiasEntrenamiento,
+    Ejercicios,
     EjerciciosAsignados,
+    Mediciones,
+    Musculo,
+    Objetivo,
+    Plan,
+    ProgramaEntrenamiento,
+    Sesion,
+    TipoEntrenamiento,
+    TipoPrograma,
+    Usuario,
 )
 
 

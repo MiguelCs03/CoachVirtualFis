@@ -1,9 +1,17 @@
-import { useState } from "react";
-import { fetchGroqCompletion } from "../../services/IA/groqClient";
-import postureExamples from "../../data/posture_examples.json"
-import { useSpeech } from "../../utils/useSpeech";
-import { Bot, Settings, MessageSquare, Lightbulb, Sparkles, Square, XCircle, Volume2 } from 'lucide-react';
-
+import { useState } from 'react'
+import { fetchGroqCompletion } from '../../services/IA/groqClient'
+import postureExamples from '../../data/posture_examples.json'
+import { useSpeech } from '../../utils/useSpeech'
+import {
+  Bot,
+  Settings,
+  MessageSquare,
+  Lightbulb,
+  Sparkles,
+  Square,
+  XCircle,
+  Volume2,
+} from 'lucide-react'
 
 export default function IAPage() {
   // Estado para el formulario Groq
@@ -14,7 +22,11 @@ export default function IAPage() {
   const [model, setModel] = useState('llama-3.1-8b-instant') // Cambia por el modelo real que tengas habilitado
   const [autoVoice, setAutoVoice] = useState(true)
   const [selectedVoice, setSelectedVoice] = useState('')
-  const { supported, speaking, voices, speak, stop } = useSpeech({ voiceName: selectedVoice, lang: 'es-ES', rate: 1 })
+  const { supported, speaking, voices, speak, stop } = useSpeech({
+    voiceName: selectedVoice,
+    lang: 'es-ES',
+    rate: 1,
+  })
 
   // Puedes agregar más modelos si tienes acceso a otros
   const availableModels = [
@@ -33,9 +45,12 @@ export default function IAPage() {
     try {
       // Construir prompt few-shot usando ejemplos de entrenamiento
       const maxExamples = 3
-      const few = postureExamples.slice(0, maxExamples).map((ex, i) => {
-        return `Ejemplo ${i + 1} - Entrada: ${ex.prompt}\nSalida: ${ex.completion}`
-      }).join('\n\n')
+      const few = postureExamples
+        .slice(0, maxExamples)
+        .map((ex, i) => {
+          return `Ejemplo ${i + 1} - Entrada: ${ex.prompt}\nSalida: ${ex.completion}`
+        })
+        .join('\n\n')
 
       const combined = `${few}\n\nConsulta: ${prompt}\nRespuesta:`
 
@@ -61,7 +76,8 @@ export default function IAPage() {
             <Bot className="w-10 h-10 text-blue-600" /> Asistente de IA
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Consulta con nuestro asistente inteligente para obtener respuestas personalizadas sobre postura y entrenamiento.
+            Consulta con nuestro asistente inteligente para obtener respuestas personalizadas sobre
+            postura y entrenamiento.
           </p>
         </div>
 
@@ -76,17 +92,17 @@ export default function IAPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Selector de modelo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Modelo de IA
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Modelo de IA</label>
                 <select
                   value={model}
-                  onChange={e => setModel(e.target.value)}
+                  onChange={(e) => setModel(e.target.value)}
                   disabled={loading}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  {availableModels.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
+                  {availableModels.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -99,13 +115,15 @@ export default function IAPage() {
                   </label>
                   <select
                     value={selectedVoice}
-                    onChange={e => setSelectedVoice(e.target.value)}
+                    onChange={(e) => setSelectedVoice(e.target.value)}
                     disabled={loading}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value=''>Voz automática</option>
-                    {voices.map(v => (
-                      <option key={v.name} value={v.name}>{v.name}</option>
+                    <option value="">Voz automática</option>
+                    {voices.map((v) => (
+                      <option key={v.name} value={v.name}>
+                        {v.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -117,23 +135,24 @@ export default function IAPage() {
                   type="checkbox"
                   id="autoVoice"
                   checked={autoVoice}
-                  onChange={e => setAutoVoice(e.target.checked)}
+                  onChange={(e) => setAutoVoice(e.target.checked)}
                   disabled={loading}
                   className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:cursor-not-allowed"
                 />
-                <label htmlFor="autoVoice" className="ml-3 text-sm font-medium text-gray-700 flex items-center gap-2">
+                <label
+                  htmlFor="autoVoice"
+                  className="ml-3 text-sm font-medium text-gray-700 flex items-center gap-2"
+                >
                   <Volume2 className="w-4 h-4" /> Leer respuesta automáticamente
                 </label>
               </div>
 
               {/* Campo de consulta */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tu consulta
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tu consulta</label>
                 <textarea
                   value={prompt}
-                  onChange={e => setPrompt(e.target.value)}
+                  onChange={(e) => setPrompt(e.target.value)}
                   placeholder="¿Cómo puedo mejorar mi postura al trabajar? ¿Qué ejercicios me recomiendas?"
                   disabled={loading}
                   required
@@ -151,9 +170,25 @@ export default function IAPage() {
                 >
                   {loading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Consultando...
                     </>
@@ -203,7 +238,9 @@ export default function IAPage() {
             {response ? (
               <div className="bg-gray-900 rounded-lg p-6 text-gray-100 font-mono text-sm leading-relaxed max-h-96 overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-green-400 font-semibold flex items-center gap-2"><Bot className="w-5 h-5" /> Asistente IA:</span>
+                  <span className="text-green-400 font-semibold flex items-center gap-2">
+                    <Bot className="w-5 h-5" /> Asistente IA:
+                  </span>
                   <span className="text-gray-400 text-xs">{new Date().toLocaleTimeString()}</span>
                 </div>
                 <div className="whitespace-pre-wrap">{response}</div>
@@ -212,7 +249,10 @@ export default function IAPage() {
               <div className="text-center py-12 text-gray-500">
                 <Bot className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium mb-2">¡Listo para ayudarte!</h3>
-                <p>Escribe tu consulta y presiona "Consultar IA" para recibir una respuesta personalizada.</p>
+                <p>
+                  Escribe tu consulta y presiona "Consultar IA" para recibir una respuesta
+                  personalizada.
+                </p>
               </div>
             )}
           </div>
@@ -246,5 +286,5 @@ export default function IAPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

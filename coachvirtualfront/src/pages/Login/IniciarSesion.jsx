@@ -1,36 +1,36 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/useAuth";
-import { Lock, ShieldCheck, ChevronRight } from "lucide-react";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/useAuth'
+import { Lock, ShieldCheck, ChevronRight } from 'lucide-react'
 
 /** Input de contraseña accesible con estilo industrial */
 const PasswordInput = ({
   value,
   onChange,
-  name = "password",
-  placeholder = "••••••••",
-  autoComplete = "current-password",
+  name = 'password',
+  placeholder = '••••••••',
+  autoComplete = 'current-password',
   required = false,
 }) => {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(false)
   return (
     <div className="space-y-2 relative">
       <div className="flex justify-between items-center text-yellow-400 font-black text-[10px] tracking-widest uppercase">
         <span>Clave de Acceso</span>
         <div className="flex items-center gap-2">
-           <button 
-             type="button"
-             onClick={() => setShow(!show)}
-             className="text-[8px] hover:text-white transition-colors"
-           >
-             {show ? "OCULTAR" : "MOSTRAR"}
-           </button>
-           <ShieldCheck className="w-3 h-3" />
+          <button
+            type="button"
+            onClick={() => setShow(!show)}
+            className="text-[8px] hover:text-white transition-colors"
+          >
+            {show ? 'OCULTAR' : 'MOSTRAR'}
+          </button>
+          <ShieldCheck className="w-3 h-3" />
         </div>
       </div>
       <input
         name={name}
-        type={show ? "text" : "password"}
+        type={show ? 'text' : 'password'}
         value={value}
         onChange={onChange}
         required={required}
@@ -39,42 +39,39 @@ const PasswordInput = ({
         placeholder={placeholder}
       />
     </div>
-  );
-};
+  )
+}
 
 const IniciarSesion = ({ signIn, onSuccess }) => {
-  const navigate = useNavigate();
-  const { isSuper } = useAuth();
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const navigate = useNavigate()
+  const { isSuper } = useAuth()
+  const [formData, setFormData] = useState({ email: '', password: '' })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleChange = (e) =>
-    setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  const handleChange = (e) => setFormData((s) => ({ ...s, [e.target.name]: e.target.value }))
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
     try {
-      await signIn(formData.email, formData.password);
-      onSuccess?.();
+      await signIn(formData.email, formData.password)
+      onSuccess?.()
 
       // Redirección por rol:
       if (isSuper) {
-        navigate("/home", { replace: true });
+        navigate('/home', { replace: true })
       } else {
-        const next = localStorage.getItem("cv.category") ? "/musculo" : "/seleccionar";
-        navigate(next, { replace: true });
+        const next = localStorage.getItem('cv.category') ? '/musculo' : '/seleccionar'
+        navigate(next, { replace: true })
       }
     } catch (err) {
-      setError(
-        err?.message || "Error al iniciar sesión. Verifica tus credenciales."
-      );
+      setError(err?.message || 'Error al iniciar sesión. Verifica tus credenciales.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="w-full">
@@ -90,7 +87,7 @@ const IniciarSesion = ({ signIn, onSuccess }) => {
             <span>ID de Atleta</span>
             <Lock className="w-3 h-3" />
           </div>
-          <input 
+          <input
             name="email"
             type="email"
             value={formData.email}
@@ -102,24 +99,19 @@ const IniciarSesion = ({ signIn, onSuccess }) => {
           />
         </div>
 
-        <PasswordInput
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+        <PasswordInput name="password" value={formData.password} onChange={handleChange} required />
 
-        <button 
+        <button
           type="submit"
           disabled={isLoading}
           className="w-full bg-yellow-400 hover:bg-white text-black font-black py-5 uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-3 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Sincronizando..." : "Iniciar Sincronización"} 
+          {isLoading ? 'Sincronizando...' : 'Iniciar Sincronización'}
           {!isLoading && <ChevronRight className="w-4 h-4" />}
         </button>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default IniciarSesion;
+export default IniciarSesion

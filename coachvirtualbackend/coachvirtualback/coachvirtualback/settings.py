@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
-from decouple import AutoConfig
 import os
+from pathlib import Path
 from urllib.parse import urlparse
+
+from decouple import AutoConfig
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,7 +53,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Apps de terceros
     "rest_framework",
-    "corsheaders", # Asegúrate de que esté instalado: pip install django-cors-headers
+    "corsheaders",  # Asegúrate de que esté instalado: pip install django-cors-headers
     # Mis apps
     "usuarios",
     "poses",
@@ -61,14 +62,10 @@ INSTALLED_APPS = [
     "dispositivo",
 ]
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
-}
+REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware", # DEBE estar al principio o lo más arriba posible
+    "corsheaders.middleware.CorsMiddleware",  # DEBE estar al principio o lo más arriba posible
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

@@ -5,18 +5,21 @@ Este módulo contiene un flujo limpio y estructurado para la selección de ejerc
 ## Estructura del Flujo
 
 ### 1. CategoriaEjercicios (`/ejercicios/categoria`)
+
 - **Descripción**: Vista inicial donde el usuario selecciona entre Gimnasio o Fisioterapia
 - **Navegación**: Al seleccionar, redirige a `/ejercicios/parte-cuerpo?categoria=XXX`
 
 ### 2. ParteCuerpo (`/ejercicios/parte-cuerpo`)
+
 - **Descripción**: Muestra las partes del cuerpo disponibles
 - **Opciones**: Brazos, Piernas, Espalda, Cintura, Cabeza
 - **Parámetro**: Recibe `categoria` por query string
 - **Navegación**: Al seleccionar, redirige a `/ejercicios/seleccion?categoria=XXX&parte=YYY`
 
 ### 3. SeleccionEjercicio (`/ejercicios/seleccion`)
+
 - **Descripción**: Muestra los ejercicios específicos disponibles para la parte del cuerpo
-- **Ejemplos**: 
+- **Ejemplos**:
   - Brazos: Bíceps, Tríceps, Antebrazos
   - Piernas: Cuádriceps, Isquiotibiales
   - etc.
@@ -37,6 +40,7 @@ Este módulo contiene un flujo limpio y estructurado para la selección de ejerc
 Los datos de ejercicios están actualmente hardcodeados en `SeleccionEjercicio.jsx`.
 
 Para conectar con API:
+
 1. Crear servicio en `src/services/EjerciciosFlowService.js`
 2. Implementar endpoints en el backend
 3. Reemplazar el objeto `ejerciciosPorParte` con llamadas a API

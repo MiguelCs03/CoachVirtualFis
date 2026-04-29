@@ -9,20 +9,21 @@ Genera datos basados en:
 """
 
 import random
-from datetime import datetime, timedelta
-from typing import Dict, Any
+from datetime import datetime
+from typing import Any
+
 from django.core.cache import cache
 
 
 class LocalFitnessSimulator:
     """Simulador de datos de fitness local."""
-    
+
     CACHE_KEY_PREFIX = "local_fitness_"
-    
-    def __init__(self, user_id: int = 1):
+
+    def __init__(self, user_id: int = 1) -> None:
         self.user_id = user_id
         self.cache_key = f"{self.CACHE_KEY_PREFIX}{user_id}"
-    
+
     def _get_hour_factor(self) -> float:
         """Factor de actividad basado en la hora del día."""
         hour = datetime.now().hour
@@ -39,13 +40,13 @@ class LocalFitnessSimulator:
             return 1.0
         else:  # Madrugada/noche
             return 0.2
-    
+
     def _get_day_progress(self) -> float:
         """Progreso del día (0.0 a 1.0)."""
         now = datetime.now()
         start_of_day = datetime(now.year, now.month, now.day, 6, 0)  # Empieza a las 6am
         end_of_day = datetime(now.year, now.month, now.day, 22, 0)  # Termina a las 10pm
-        
+
         if now < start_of_day:
             return 0.0
         elif now > end_of_day:
@@ -54,16 +55,16 @@ class LocalFitnessSimulator:
             total_seconds = (end_of_day - start_of_day).total_seconds()
             elapsed = (now - start_of_day).total_seconds()
             return elapsed / total_seconds
-    
-    def _load_daily_base(self) -> Dict[str, Any]:
+
+    def _load_daily_base(self) -> dict[str, Any]:
         """Carga o genera la base diaria de datos."""
         today = datetime.now().strftime("%Y-%m-%d")
         cache_key = f"{self.cache_key}_{today}"
-        
+
         data = cache.get(cache_key)
         if data:
             return data
-        
+
         # Generar nueva base diaria con metas
         data = {
             "date": today,
@@ -72,38 +73,38 @@ class LocalFitnessSimulator:
             "base_heart_rate": random.randint(60, 75),
             "activity_multiplier": random.uniform(0.8, 1.3),
         }
-        
+
         # Guardar por 24 horas
         cache.set(cache_key, data, 60 * 60 * 24)
         return data
-    
-    def get_current_stats(self) -> Dict[str, Any]:
+
+    def get_current_stats(self) -> dict[str, Any]:
         """Obtiene estadísticas actuales simuladas."""
         base = self._load_daily_base()
         progress = self._get_day_progress()
         hour_factor = self._get_hour_factor()
-        
+
         # Calcular pasos acumulados
         # Los pasos aumentan con el progreso del día
         max_steps = int(base["step_goal"] * base["activity_multiplier"])
         current_steps = int(max_steps * progress * random.uniform(0.9, 1.1))
         current_steps = max(0, min(current_steps, max_steps + 2000))
-        
+
         # Calcular calorías (correlacionadas con pasos)
         calories_per_step = random.uniform(0.03, 0.05)
         base_metabolism = 1200 * progress  # Metabolismo basal
         activity_calories = current_steps * calories_per_step
         total_calories = int(base_metabolism + activity_calories)
-        
+
         # Frecuencia cardíaca (varía con actividad reciente)
         base_hr = base["base_heart_rate"]
         activity_hr_boost = int(hour_factor * random.uniform(5, 20))
         current_hr = base_hr + activity_hr_boost
         current_hr = max(55, min(current_hr, 120))  # Límites realistas
-        
+
         # Meta y porcentaje
         step_progress = min(100, int((current_steps / base["step_goal"]) * 100))
-        
+
         return {
             "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "steps": current_steps,
@@ -118,7 +119,7 @@ class LocalFitnessSimulator:
             "activityLevel": self._get_activity_level(hour_factor),
             "dayProgress": int(progress * 100),
         }
-    
+
     def _get_hr_zone(self, hr: int) -> str:
         """Determina la zona de frecuencia cardíaca."""
         if hr < 60:
@@ -131,7 +132,7 @@ class LocalFitnessSimulator:
             return "intenso"
         else:
             return "máximo"
-    
+
     def _get_activity_level(self, hour_factor: float) -> str:
         """Nivel de actividad basado en el factor horario."""
         if hour_factor < 0.4:
@@ -142,18 +143,18 @@ class LocalFitnessSimulator:
             return "activo"
         else:
             return "muy activo"
-    
-    def record_exercise(self, exercise_type: str, duration_minutes: int) -> Dict[str, Any]:
+
+    def record_exercise(self, exercise_type: str, duration_minutes: int) -> dict[str, Any]:
         """Registra una sesión de ejercicio (bonus de pasos/calorías)."""
         today = datetime.now().strftime("%Y-%m-%d")
         exercise_key = f"{self.cache_key}_exercise_{today}"
-        
+
         exercises = cache.get(exercise_key) or []
-        
+
         # Calcular bonus
         steps_bonus = duration_minutes * random.randint(80, 120)
         calories_bonus = duration_minutes * random.uniform(5, 10)
-        
+
         exercise_record = {
             "type": exercise_type,
             "duration": duration_minutes,
@@ -161,15 +162,15 @@ class LocalFitnessSimulator:
             "calories_bonus": int(calories_bonus),
             "timestamp": datetime.now().isoformat(),
         }
-        
+
         exercises.append(exercise_record)
         cache.set(exercise_key, exercises, 60 * 60 * 24)
-        
+
         return exercise_record
 
 
 # Función helper para usar desde views
-def get_local_fitness_stats(user_id: int = 1) -> Dict[str, Any]:
+def get_local_fitness_stats(user_id: int = 1) -> dict[str, Any]:
     """Obtiene estadísticas de fitness simuladas para un usuario."""
     simulator = LocalFitnessSimulator(user_id)
     return simulator.get_current_stats()

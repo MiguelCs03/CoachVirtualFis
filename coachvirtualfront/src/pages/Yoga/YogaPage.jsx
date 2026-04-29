@@ -1,56 +1,56 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Tadasana from './Tadasana';
-import Trikonasana from './Trikonasana';
-import Virabhadrasana from './Virabhadrasana';
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import Tadasana from './Tadasana'
+import Trikonasana from './Trikonasana'
+import Virabhadrasana from './Virabhadrasana'
 
 export default function YogaPage() {
-  const [selectedPose, setSelectedPose] = useState('tadasana');
-  const [timer, setTimer] = useState(10);
+  const [selectedPose, setSelectedPose] = useState('tadasana')
+  const [timer, setTimer] = useState(10)
 
   const poses = [
-    { 
-      id: 'tadasana', 
-      name: 'Tadasana', 
+    {
+      id: 'tadasana',
+      name: 'Tadasana',
       label: 'Postura de la Montaña',
       icon: '🧘‍♀️',
-      color: 'purple'
+      color: 'purple',
     },
-    { 
-      id: 'trikonasana', 
-      name: 'Trikonasana', 
+    {
+      id: 'trikonasana',
+      name: 'Trikonasana',
       label: 'Postura del Triángulo',
       icon: '🔺',
-      color: 'blue'
+      color: 'blue',
     },
-    { 
-      id: 'virabhadrasana', 
-      name: 'Virabhadrasana', 
+    {
+      id: 'virabhadrasana',
+      name: 'Virabhadrasana',
       label: 'Postura del Guerrero',
       icon: '⚔️',
-      color: 'orange'
-    }
-  ];
+      color: 'orange',
+    },
+  ]
 
   const timerOptions = [
     { value: 10, label: '10 segundos' },
     { value: 20, label: '20 segundos' },
     { value: 30, label: '30 segundos' },
-    { value: 60, label: '60 segundos' }
-  ];
+    { value: 60, label: '60 segundos' },
+  ]
 
   const renderSelectedPose = () => {
     switch (selectedPose) {
       case 'tadasana':
-        return <Tadasana timer={timer} />;
+        return <Tadasana timer={timer} />
       case 'trikonasana':
-        return <Trikonasana timer={timer} />;
+        return <Trikonasana timer={timer} />
       case 'virabhadrasana':
-        return <Virabhadrasana timer={timer} />;
+        return <Virabhadrasana timer={timer} />
       default:
-        return <Tadasana timer={timer} />;
+        return <Tadasana timer={timer} />
     }
-  };
+  }
 
   return (
     <div className="relative">
@@ -65,13 +65,15 @@ export default function YogaPage() {
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {poses.map((pose) => {
-                  const isActive = selectedPose === pose.id;
-                  const borderColor = isActive 
-                    ? pose.color === 'purple' ? 'border-purple-600 bg-purple-50'
-                    : pose.color === 'blue' ? 'border-blue-600 bg-blue-50'
-                    : 'border-orange-600 bg-orange-50'
-                    : 'border-gray-200 hover:border-gray-400';
-                  
+                  const isActive = selectedPose === pose.id
+                  const borderColor = isActive
+                    ? pose.color === 'purple'
+                      ? 'border-purple-600 bg-purple-50'
+                      : pose.color === 'blue'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-orange-600 bg-orange-50'
+                    : 'border-gray-200 hover:border-gray-400'
+
                   return (
                     <button
                       key={pose.id}
@@ -81,7 +83,7 @@ export default function YogaPage() {
                       <div className="text-2xl mb-1">{pose.icon}</div>
                       <div className="text-xs font-medium">{pose.name}</div>
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -122,9 +124,7 @@ export default function YogaPage() {
       </div>
 
       {/* Renderizar componente de postura seleccionada */}
-      <div className="mt-24">
-        {renderSelectedPose()}
-      </div>
+      <div className="mt-24">{renderSelectedPose()}</div>
     </div>
-  );
+  )
 }

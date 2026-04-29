@@ -1,11 +1,11 @@
 // src/pages/tipos/Tipo.jsx
-import React, { Component } from "react";
-import TipoService from "../../services/TipoService";
-import Paginacion from "../../components/Paginacion"; // ajusta la ruta si hace falta
+import React, { Component } from 'react'
+import tipoService from '../../services/tipoService'
+import Paginacion from '../../components/Paginacion' // ajusta la ruta si hace falta
 
 class GestionarTipo extends Component {
   state = {
-    form: { id: null, nombre: "", estado: true },
+    form: { id: null, nombre: '', estado: true },
     items: [],
     loadingList: false,
     loadingSave: false,
@@ -18,10 +18,10 @@ class GestionarTipo extends Component {
     // Paginación
     currentPage: 1,
     pageSize: 5,
-  };
+  }
 
   componentDidMount() {
-    this.loadList();
+    this.loadList()
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -29,167 +29,159 @@ class GestionarTipo extends Component {
       prevState.items.length !== this.state.items.length ||
       prevState.pageSize !== this.state.pageSize
     ) {
-      this.ensurePageInRange();
+      this.ensurePageInRange()
     }
   }
 
   // ====== Paginación ======
   ensurePageInRange = () => {
     this.setState((prev) => {
-      const totalPages = Math.max(
-        1,
-        Math.ceil(prev.items.length / prev.pageSize)
-      );
-      const newPage = Math.min(prev.currentPage, totalPages) || 1;
-      return newPage !== prev.currentPage ? { currentPage: newPage } : null;
-    });
-  };
+      const totalPages = Math.max(1, Math.ceil(prev.items.length / prev.pageSize))
+      const newPage = Math.min(prev.currentPage, totalPages) || 1
+      return newPage !== prev.currentPage ? { currentPage: newPage } : null
+    })
+  }
 
   goToPage = (p) => {
-    this.setState({ currentPage: p });
-  };
+    this.setState({ currentPage: p })
+  }
 
   getPagedItems = () => {
-    const { items, currentPage, pageSize } = this.state;
-    const start = (currentPage - 1) * pageSize;
-    return items.slice(start, start + pageSize);
-  };
+    const { items, currentPage, pageSize } = this.state
+    const start = (currentPage - 1) * pageSize
+    return items.slice(start, start + pageSize)
+  }
 
   // ====== API ======
   loadList = async () => {
-    this.setState({ loadingList: true, errorList: null });
+    this.setState({ loadingList: true, errorList: null })
     try {
-      const data = await TipoService.getAll();
-      const sorted = [...(data || [])].sort(
-        (a, b) => (b.id || 0) - (a.id || 0)
-      );
-      this.setState({ items: sorted, loadingList: false }, this.ensurePageInRange);
+      const data = await tipoService.getAll()
+      const sorted = [...(data || [])].sort((a, b) => (b.id || 0) - (a.id || 0))
+      this.setState({ items: sorted, loadingList: false }, this.ensurePageInRange)
     } catch (err) {
       const msg =
-        err?.response?.data?.detail ||
-        err?.message ||
-        "No se pudo cargar la lista de tipos.";
-      this.setState({ loadingList: false, errorList: msg });
+        err?.response?.data?.detail || err?.message || 'No se pudo cargar la lista de tipos.'
+      this.setState({ loadingList: false, errorList: msg })
     }
-  };
+  }
 
   // ====== Form ======
   handleChange = (e) => {
-    const { name, type, value, checked } = e.target;
+    const { name, type, value, checked } = e.target
     this.setState((prev) => ({
       form: {
         ...prev.form,
-        [name]: type === "checkbox" ? checked : value,
+        [name]: type === 'checkbox' ? checked : value,
       },
       errorSave: null,
       successSave: null,
       errorsByField: { ...prev.errorsByField, [name]: undefined },
-    }));
-  };
+    }))
+  }
 
   resetForm = () => {
     this.setState({
-      form: { id: null, nombre: "", estado: true },
+      form: { id: null, nombre: '', estado: true },
       isEditing: false,
       errorSave: null,
       successSave: null,
       errorsByField: {},
-    });
-  };
+    })
+  }
 
   editRow = (row) => {
     this.setState({
       form: {
         id: row.id,
-        nombre: row.nombre || "",
+        nombre: row.nombre || '',
         estado: row.estado ?? true,
       },
       isEditing: true,
       errorSave: null,
       successSave: null,
       errorsByField: {},
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   removeRow = async (row) => {
-    if (!window.confirm(`¿Eliminar el tipo "${row.nombre}"?`)) return;
+    if (!window.confirm(`¿Eliminar el tipo "${row.nombre}"?`)) return
     try {
-      await TipoService.delete(row.id);
+      await tipoService.delete(row.id)
       this.setState(
         (prev) => ({
           items: prev.items.filter((x) => x.id !== row.id),
         }),
         this.ensurePageInRange
-      );
-      if (this.state.form.id === row.id) this.resetForm();
+      )
+      if (this.state.form.id === row.id) this.resetForm()
     } catch (err) {
-      const msg =
-        err?.response?.data?.detail || err?.message || "No se pudo eliminar.";
-      alert(msg);
+      const msg = err?.response?.data?.detail || err?.message || 'No se pudo eliminar.'
+      alert(msg)
     }
-  };
+  }
 
   validate = () => {
-    const { nombre } = this.state.form;
-    const errors = {};
-    if (!nombre?.trim()) errors.nombre = "Nombre requerido";
-    this.setState({ errorsByField: errors });
-    return Object.keys(errors).length === 0;
-  };
+    const { nombre } = this.state.form
+    const errors = {}
+    if (!nombre?.trim()) errors.nombre = 'Nombre requerido'
+    this.setState({ errorsByField: errors })
+    return Object.keys(errors).length === 0
+  }
 
   handleSubmit = async (e) => {
-    e.preventDefault();
-    if (this.state.loadingSave) return;
-    if (!this.validate()) return;
+    e.preventDefault()
+    if (this.state.loadingSave) return
+    if (!this.validate()) return
 
-    this.setState({ loadingSave: true, errorSave: null, successSave: null });
+    this.setState({ loadingSave: true, errorSave: null, successSave: null })
 
     const payload = {
       nombre: this.state.form.nombre.trim(),
       estado: this.state.form.estado,
-    };
+    }
 
     try {
-      let saved;
+      let saved
       if (this.state.isEditing && this.state.form.id) {
-        saved = await TipoService.update(this.state.form.id, payload);
+        saved = await tipoService.update(this.state.form.id, payload)
         this.setState({
-          successSave: "Tipo actualizado correctamente.",
+          successSave: 'Tipo actualizado correctamente.',
           loadingSave: false,
-        });
+        })
         this.setState((prev) => ({
           items: prev.items.map((x) => (x.id === saved.id ? saved : x)),
-        }));
+        }))
       } else {
-        saved = await TipoService.create(payload);
+        saved = await tipoService.create(payload)
         this.setState({
-          successSave: "Tipo creado correctamente.",
+          successSave: 'Tipo creado correctamente.',
           loadingSave: false,
-        });
-        this.setState((prev) => ({ items: [saved, ...prev.items] }));
+        })
+        this.setState((prev) => ({ items: [saved, ...prev.items] }))
       }
-      this.resetForm();
-      this.loadList();
+      this.resetForm()
+      this.loadList()
     } catch (err) {
-      let msg = "Error al guardar.";
-      let fieldErrors = {};
+      let msg = 'Error al guardar.'
+      let fieldErrors = {}
       if (err.response) {
-        if (typeof err.response.data === "object") fieldErrors = err.response.data;
-        msg = err.response.data?.detail || msg;
-      } else if (err.message) msg = err.message;
+        if (typeof err.response.data === 'object') fieldErrors = err.response.data
+        msg = err.response.data?.detail || msg
+      } else if (err.message) msg = err.message
       this.setState({
         loadingSave: false,
         errorSave: msg,
         errorsByField: fieldErrors,
-      });
+      })
     }
-  };
+  }
 
   // ====== UI helpers ======
-  renderField(label, name, type = "text", props = {}) {
-    const { form, errorsByField } = this.state;
-    const hasError = Boolean(errorsByField?.[name]);
+  renderField(label, name, type = 'text', props = {}) {
+    const { form, errorsByField } = this.state
+    const hasError = Boolean(errorsByField?.[name])
     return (
       <div className="flex flex-col gap-1">
         <label className="text-white/80 text-sm" htmlFor={name}>
@@ -202,23 +194,23 @@ class GestionarTipo extends Component {
           value={form[name]}
           onChange={this.handleChange}
           className={`px-4 py-3 rounded-xl bg-white/10 border ${
-            hasError ? "border-red-400" : "border-white/20"
+            hasError ? 'border-red-400' : 'border-white/20'
           } text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/40`}
           {...props}
         />
         {hasError && (
           <span className="text-red-300 text-xs">
             {Array.isArray(errorsByField[name])
-              ? errorsByField[name].join(", ")
+              ? errorsByField[name].join(', ')
               : String(errorsByField[name])}
           </span>
         )}
       </div>
-    );
+    )
   }
 
   renderEstadoToggle() {
-    const { form } = this.state;
+    const { form } = this.state
     return (
       <div className="flex items-center gap-2 mt-2">
         <label htmlFor="estado" className="text-white/80 text-sm">
@@ -233,7 +225,7 @@ class GestionarTipo extends Component {
           className="w-5 h-5 accent-indigo-500"
         />
       </div>
-    );
+    )
   }
 
   render() {
@@ -247,17 +239,17 @@ class GestionarTipo extends Component {
       isEditing,
       currentPage,
       pageSize,
-    } = this.state;
+    } = this.state
 
-    const total = items.length;
-    const paged = this.getPagedItems();
+    const total = items.length
+    const paged = this.getPagedItems()
 
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 p-6">
         {/* Formulario */}
         <section className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 w-full max-w-3xl mx-auto border border-white/20 mb-8">
           <h1 className="text-2xl font-bold text-white text-center mb-4">
-            {isEditing ? "Editar tipo" : "Crear tipo"}
+            {isEditing ? 'Editar tipo' : 'Crear tipo'}
           </h1>
 
           {errorSave && (
@@ -272,8 +264,8 @@ class GestionarTipo extends Component {
           )}
 
           <form className="grid grid-cols-1 gap-4" onSubmit={this.handleSubmit}>
-            {this.renderField("Nombre", "nombre", "text", {
-              placeholder: "Ej: Fuerza, Hipertrofia, Resistencia…",
+            {this.renderField('Nombre', 'nombre', 'text', {
+              placeholder: 'Ej: Fuerza, Hipertrofia, Resistencia…',
             })}
             {this.renderEstadoToggle()}
 
@@ -283,11 +275,7 @@ class GestionarTipo extends Component {
                 disabled={loadingSave}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-2xl transition-all shadow-lg hover:scale-[1.02]"
               >
-                {loadingSave
-                  ? "Guardando…"
-                  : isEditing
-                  ? "Guardar cambios"
-                  : "Crear"}
+                {loadingSave ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear'}
               </button>
               {isEditing && (
                 <button
@@ -339,9 +327,7 @@ class GestionarTipo extends Component {
                       <tr key={row.id} className="border-b border-white/10">
                         <td className="py-2 pr-4">{row.id}</td>
                         <td className="py-2 pr-4">{row.nombre}</td>
-                        <td className="py-2 pr-4">
-                          {row.estado ? "Activo" : "Inactivo"}
-                        </td>
+                        <td className="py-2 pr-4">{row.estado ? 'Activo' : 'Inactivo'}</td>
                         <td className="py-2 pr-4">
                           <div className="flex gap-2">
                             <button
@@ -374,8 +360,8 @@ class GestionarTipo extends Component {
           )}
         </section>
       </main>
-    );
+    )
   }
 }
 
-export default GestionarTipo;
+export default GestionarTipo

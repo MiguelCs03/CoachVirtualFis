@@ -9,19 +9,20 @@ Uso:
     python manage.py seed_poses
     python manage.py seed_poses --clear  # Borra datos existentes primero
 """
+
 from django.core.management.base import BaseCommand
+
 from poses.models import PoseTrainingData
-import json
 
 
 class Command(BaseCommand):
-    help = 'Poblar base de datos con datos de entrenamiento de poses para IA'
+    help = "Poblar base de datos con datos de entrenamiento de poses para IA"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--clear',
-            action='store_true',
-            help='Eliminar todos los datos existentes antes de insertar',
+            "--clear",
+            action="store_true",
+            help="Eliminar todos los datos existentes antes de insertar",
         )
 
     def handle(self, *args, **options):
@@ -29,7 +30,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("🤖 INICIANDO POBLACIÓN DE DATASET DE IA"))
         self.stdout.write("=" * 70)
 
-        if options['clear']:
+        if options["clear"]:
             self.clear_data()
 
         self.seed_flexiones()
@@ -42,14 +43,14 @@ class Command(BaseCommand):
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(self.style.SUCCESS("✅ DATASET DE IA COMPLETADO"))
         self.stdout.write("=" * 70)
-        
+
         # Estadísticas
         total = PoseTrainingData.objects.count()
-        correctos = PoseTrainingData.objects.filter(etiqueta='correcto').count()
-        incorrectos = PoseTrainingData.objects.filter(etiqueta='incorrecto').count()
-        snapshots = PoseTrainingData.objects.filter(tipo='snapshot').count()
-        secuencias = PoseTrainingData.objects.filter(tipo='secuencia').count()
-        
+        correctos = PoseTrainingData.objects.filter(etiqueta="correcto").count()
+        incorrectos = PoseTrainingData.objects.filter(etiqueta="incorrecto").count()
+        snapshots = PoseTrainingData.objects.filter(tipo="snapshot").count()
+        secuencias = PoseTrainingData.objects.filter(tipo="secuencia").count()
+
         self.stdout.write("\n📊 Estadísticas del Dataset:")
         self.stdout.write(f"  - Total de muestras: {total}")
         self.stdout.write(f"  - Posturas correctas: {correctos}")
@@ -68,33 +69,33 @@ class Command(BaseCommand):
     def _create_sample(self, ejercicio, tipo, etiqueta, landmarks=None, angulos=None, frames=None):
         """Helper para crear una muestra de entrenamiento"""
         data = {
-            'ejercicio': ejercicio,
-            'tipo': tipo,
-            'etiqueta': etiqueta,
+            "ejercicio": ejercicio,
+            "tipo": tipo,
+            "etiqueta": etiqueta,
         }
-        
-        if tipo == 'snapshot':
-            data['landmarks'] = landmarks
-            data['angulos'] = angulos
+
+        if tipo == "snapshot":
+            data["landmarks"] = landmarks
+            data["angulos"] = angulos
         else:
-            data['frames'] = frames
-            data['duracion_segundos'] = len(frames) / 30 if frames else 0
-            data['fps'] = 30
-            data['total_frames'] = len(frames) if frames else 0
-        
+            data["frames"] = frames
+            data["duracion_segundos"] = len(frames) / 30 if frames else 0
+            data["fps"] = 30
+            data["total_frames"] = len(frames) if frames else 0
+
         sample, created = PoseTrainingData.objects.update_or_create(
             ejercicio=ejercicio,
             tipo=tipo,
             etiqueta=etiqueta,
-            landmarks=landmarks if tipo == 'snapshot' else None,
-            defaults=data
+            landmarks=landmarks if tipo == "snapshot" else None,
+            defaults=data,
         )
         return sample, created
 
     def seed_flexiones(self):
         """Dataset de entrenamiento para flexiones"""
         self.stdout.write("\n💪 Insertando datos de FLEXIONES...")
-        
+
         # Postura correcta - fase baja
         landmarks_correcto_bajo = [
             {"x": 0.5, "y": 0.2, "z": 0, "visibility": 0.99},  # 0: nariz
@@ -131,7 +132,7 @@ class Command(BaseCommand):
             {"x": 0.34, "y": 0.98, "z": 0, "visibility": 0.9},  # 31: pie izq
             {"x": 0.66, "y": 0.98, "z": 0, "visibility": 0.9},  # 32: pie der
         ]
-        
+
         angulos_correcto_bajo = {
             "leftElbow": 90,
             "rightElbow": 90,
@@ -141,14 +142,14 @@ class Command(BaseCommand):
             "rightKnee": 175,
             "torsoAngle": 180,  # Espalda recta
         }
-        
+
         sample, created = self._create_sample(
-            'flexion', 'snapshot', 'correcto',
-            landmarks=landmarks_correcto_bajo,
-            angulos=angulos_correcto_bajo
+            "flexion", "snapshot", "correcto", landmarks=landmarks_correcto_bajo, angulos=angulos_correcto_bajo
         )
-        self.stdout.write(self.style.SUCCESS(f"  ✓ Flexión correcta (fase baja): {'creada' if created else 'actualizada'}"))
-        
+        self.stdout.write(
+            self.style.SUCCESS(f"  ✓ Flexión correcta (fase baja): {'creada' if created else 'actualizada'}")
+        )
+
         # Postura correcta - fase alta
         angulos_correcto_alto = {
             "leftElbow": 170,
@@ -159,16 +160,16 @@ class Command(BaseCommand):
             "rightKnee": 175,
             "torsoAngle": 180,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='flexion',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="flexion",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_correcto_bajo,  # landmarks similares pero diferente posición vertical
-            angulos=angulos_correcto_alto
+            angulos=angulos_correcto_alto,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Flexión correcta (fase alta): creada"))
-        
+
         # Postura incorrecta - cadera caída
         angulos_incorrecto_cadera = {
             "leftElbow": 90,
@@ -179,16 +180,16 @@ class Command(BaseCommand):
             "rightKnee": 175,
             "torsoAngle": 150,  # Cadera caída
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='flexion',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="flexion",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_correcto_bajo,
-            angulos=angulos_incorrecto_cadera
+            angulos=angulos_incorrecto_cadera,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Flexión incorrecta (cadera caída): creada"))
-        
+
         # Postura incorrecta - codos muy abiertos
         angulos_incorrecto_codos = {
             "leftElbow": 45,
@@ -199,20 +200,20 @@ class Command(BaseCommand):
             "rightKnee": 175,
             "torsoAngle": 180,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='flexion',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="flexion",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_correcto_bajo,
-            angulos=angulos_incorrecto_codos
+            angulos=angulos_incorrecto_codos,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Flexión incorrecta (codos abiertos): creada"))
 
     def seed_sentadillas(self):
         """Dataset de entrenamiento para sentadillas"""
         self.stdout.write("\n🦵 Insertando datos de SENTADILLAS...")
-        
+
         # Landmarks base para sentadilla
         landmarks_base = [
             {"x": 0.5, "y": 0.1, "z": 0, "visibility": 0.99},  # nariz
@@ -249,7 +250,7 @@ class Command(BaseCommand):
             {"x": 0.38, "y": 0.95, "z": 0, "visibility": 0.9},
             {"x": 0.62, "y": 0.95, "z": 0, "visibility": 0.9},
         ]
-        
+
         # Sentadilla correcta - posición baja
         angulos_correcto = {
             "leftKnee": 90,
@@ -259,16 +260,16 @@ class Command(BaseCommand):
             "torsoAngle": 75,  # Ligera inclinación hacia adelante
             "kneeOverToe": False,  # Rodillas no pasan de los pies
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='sentadilla',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="sentadilla",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_base,
-            angulos=angulos_correcto
+            angulos=angulos_correcto,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Sentadilla correcta (posición baja): creada"))
-        
+
         # Sentadilla correcta - posición alta
         angulos_alto = {
             "leftKnee": 170,
@@ -278,16 +279,12 @@ class Command(BaseCommand):
             "torsoAngle": 90,
             "kneeOverToe": False,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='sentadilla',
-            tipo='snapshot',
-            etiqueta='correcto',
-            landmarks=landmarks_base,
-            angulos=angulos_alto
+            ejercicio="sentadilla", tipo="snapshot", etiqueta="correcto", landmarks=landmarks_base, angulos=angulos_alto
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Sentadilla correcta (posición alta): creada"))
-        
+
         # Sentadilla incorrecta - rodillas hacia adentro
         angulos_incorrecto_valgus = {
             "leftKnee": 90,
@@ -297,16 +294,16 @@ class Command(BaseCommand):
             "torsoAngle": 75,
             "kneeValgus": True,  # Rodillas hacia adentro
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='sentadilla',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="sentadilla",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_base,
-            angulos=angulos_incorrecto_valgus
+            angulos=angulos_incorrecto_valgus,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Sentadilla incorrecta (rodillas valgus): creada"))
-        
+
         # Sentadilla incorrecta - espalda muy inclinada
         angulos_incorrecto_espalda = {
             "leftKnee": 90,
@@ -315,20 +312,20 @@ class Command(BaseCommand):
             "rightHip": 90,
             "torsoAngle": 45,  # Muy inclinado
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='sentadilla',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="sentadilla",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_base,
-            angulos=angulos_incorrecto_espalda
+            angulos=angulos_incorrecto_espalda,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Sentadilla incorrecta (espalda inclinada): creada"))
 
     def seed_plancha(self):
         """Dataset de entrenamiento para plancha"""
         self.stdout.write("\n🧘 Insertando datos de PLANCHA...")
-        
+
         landmarks_plancha = [
             {"x": 0.2, "y": 0.3, "z": 0, "visibility": 0.99},  # nariz mirando abajo
             {"x": 0.19, "y": 0.28, "z": 0, "visibility": 0.99},
@@ -364,7 +361,7 @@ class Command(BaseCommand):
             {"x": 0.92, "y": 0.42, "z": 0, "visibility": 0.9},
             {"x": 0.92, "y": 0.42, "z": 0, "visibility": 0.9},
         ]
-        
+
         # Plancha correcta
         angulos_correcto = {
             "bodyLine": 180,  # Cuerpo recto
@@ -372,54 +369,54 @@ class Command(BaseCommand):
             "hipAlignment": 180,
             "neckPosition": "neutral",
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='plancha',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="plancha",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_plancha,
-            angulos=angulos_correcto
+            angulos=angulos_correcto,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Plancha correcta: creada"))
-        
+
         # Plancha incorrecta - cadera arriba
         angulos_cadera_arriba = {
             "bodyLine": 140,  # Cadera elevada
             "shoulderAlignment": 90,
             "hipAlignment": 140,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='plancha',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="plancha",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_plancha,
-            angulos=angulos_cadera_arriba
+            angulos=angulos_cadera_arriba,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Plancha incorrecta (cadera arriba): creada"))
-        
+
         # Plancha incorrecta - cadera abajo
         angulos_cadera_abajo = {
             "bodyLine": 200,  # Cadera caída
             "shoulderAlignment": 90,
             "hipAlignment": 200,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='plancha',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="plancha",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_plancha,
-            angulos=angulos_cadera_abajo
+            angulos=angulos_cadera_abajo,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Plancha incorrecta (cadera abajo): creada"))
 
     def seed_curl_biceps(self):
         """Dataset de entrenamiento para curl de bíceps"""
         self.stdout.write("\n💪 Insertando datos de CURL DE BÍCEPS...")
-        
-        landmarks_base = [{"x": 0.5, "y": 0.1 + i*0.02, "z": 0, "visibility": 0.99} for i in range(33)]
-        
+
+        landmarks_base = [{"x": 0.5, "y": 0.1 + i * 0.02, "z": 0, "visibility": 0.99} for i in range(33)]
+
         # Actualizar landmarks importantes
         landmarks_base[11] = {"x": 0.4, "y": 0.25, "z": 0, "visibility": 0.99}  # hombro izq
         landmarks_base[12] = {"x": 0.6, "y": 0.25, "z": 0, "visibility": 0.99}  # hombro der
@@ -427,7 +424,7 @@ class Command(BaseCommand):
         landmarks_base[14] = {"x": 0.62, "y": 0.4, "z": 0, "visibility": 0.99}  # codo der
         landmarks_base[15] = {"x": 0.35, "y": 0.3, "z": 0, "visibility": 0.99}  # muñeca izq (arriba)
         landmarks_base[16] = {"x": 0.65, "y": 0.3, "z": 0, "visibility": 0.99}  # muñeca der (arriba)
-        
+
         # Curl correcto - posición contraída
         angulos_contraido = {
             "leftElbow": 40,
@@ -435,16 +432,16 @@ class Command(BaseCommand):
             "shoulderStability": True,
             "wristAlignment": "neutral",
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='curl_biceps',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="curl_biceps",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_base,
-            angulos=angulos_contraido
+            angulos=angulos_contraido,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Curl bíceps correcto (contraído): creada"))
-        
+
         # Curl correcto - posición extendida
         angulos_extendido = {
             "leftElbow": 170,
@@ -452,16 +449,16 @@ class Command(BaseCommand):
             "shoulderStability": True,
             "wristAlignment": "neutral",
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='curl_biceps',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="curl_biceps",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_base,
-            angulos=angulos_extendido
+            angulos=angulos_extendido,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Curl bíceps correcto (extendido): creada"))
-        
+
         # Curl incorrecto - swing de cuerpo
         angulos_swing = {
             "leftElbow": 40,
@@ -469,22 +466,22 @@ class Command(BaseCommand):
             "shoulderStability": False,  # Hombros moviéndose
             "bodySwing": True,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='curl_biceps',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="curl_biceps",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_base,
-            angulos=angulos_swing
+            angulos=angulos_swing,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Curl bíceps incorrecto (swing): creada"))
 
     def seed_elevacion_piernas(self):
         """Dataset de entrenamiento para elevación de piernas"""
         self.stdout.write("\n🦵 Insertando datos de ELEVACIÓN DE PIERNAS...")
-        
-        landmarks_base = [{"x": 0.5, "y": i*0.03, "z": 0, "visibility": 0.99} for i in range(33)]
-        
+
+        landmarks_base = [{"x": 0.5, "y": i * 0.03, "z": 0, "visibility": 0.99} for i in range(33)]
+
         # Posición acostada con piernas elevadas
         landmarks_base[23] = {"x": 0.5, "y": 0.6, "z": 0, "visibility": 0.99}  # cadera
         landmarks_base[24] = {"x": 0.5, "y": 0.6, "z": 0, "visibility": 0.99}
@@ -492,23 +489,23 @@ class Command(BaseCommand):
         landmarks_base[26] = {"x": 0.5, "y": 0.4, "z": 0, "visibility": 0.99}
         landmarks_base[27] = {"x": 0.5, "y": 0.2, "z": 0, "visibility": 0.99}  # tobillo
         landmarks_base[28] = {"x": 0.5, "y": 0.2, "z": 0, "visibility": 0.99}
-        
+
         # Elevación correcta
         angulos_correcto = {
             "legAngle": 90,  # Piernas a 90 grados
             "kneeExtension": 175,  # Rodillas casi rectas
             "lowerBackFlat": True,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='elevacion_piernas',
-            tipo='snapshot',
-            etiqueta='correcto',
+            ejercicio="elevacion_piernas",
+            tipo="snapshot",
+            etiqueta="correcto",
             landmarks=landmarks_base,
-            angulos=angulos_correcto
+            angulos=angulos_correcto,
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Elevación piernas correcta: creada"))
-        
+
         # Elevación incorrecta - espalda arqueada
         angulos_incorrecto = {
             "legAngle": 90,
@@ -516,22 +513,22 @@ class Command(BaseCommand):
             "lowerBackFlat": False,  # Espalda arqueada
             "lowerBackArch": 30,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='elevacion_piernas',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="elevacion_piernas",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_base,
-            angulos=angulos_incorrecto
+            angulos=angulos_incorrecto,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Elevación piernas incorrecta (espalda): creada"))
 
     def seed_remo(self):
         """Dataset de entrenamiento para remo con mancuernas"""
         self.stdout.write("\n🚣 Insertando datos de REMO...")
-        
-        landmarks_base = [{"x": 0.5, "y": i*0.03, "z": 0, "visibility": 0.99} for i in range(33)]
-        
+
+        landmarks_base = [{"x": 0.5, "y": i * 0.03, "z": 0, "visibility": 0.99} for i in range(33)]
+
         # Posición inclinada para remo
         landmarks_base[11] = {"x": 0.35, "y": 0.3, "z": 0, "visibility": 0.99}  # hombro
         landmarks_base[12] = {"x": 0.65, "y": 0.3, "z": 0, "visibility": 0.99}
@@ -539,7 +536,7 @@ class Command(BaseCommand):
         landmarks_base[14] = {"x": 0.7, "y": 0.45, "z": 0, "visibility": 0.99}
         landmarks_base[23] = {"x": 0.5, "y": 0.5, "z": 0, "visibility": 0.99}  # cadera
         landmarks_base[24] = {"x": 0.5, "y": 0.5, "z": 0, "visibility": 0.99}
-        
+
         # Remo correcto
         angulos_correcto = {
             "torsoAngle": 45,  # Inclinación correcta
@@ -547,16 +544,12 @@ class Command(BaseCommand):
             "backFlat": True,
             "shoulderRetraction": True,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='remo',
-            tipo='snapshot',
-            etiqueta='correcto',
-            landmarks=landmarks_base,
-            angulos=angulos_correcto
+            ejercicio="remo", tipo="snapshot", etiqueta="correcto", landmarks=landmarks_base, angulos=angulos_correcto
         )
         self.stdout.write(self.style.SUCCESS("  ✓ Remo correcto: creada"))
-        
+
         # Remo incorrecto - espalda redondeada
         angulos_incorrecto = {
             "torsoAngle": 45,
@@ -564,12 +557,12 @@ class Command(BaseCommand):
             "backFlat": False,  # Espalda redondeada
             "spineRounding": True,
         }
-        
+
         PoseTrainingData.objects.create(
-            ejercicio='remo',
-            tipo='snapshot',
-            etiqueta='incorrecto',
+            ejercicio="remo",
+            tipo="snapshot",
+            etiqueta="incorrecto",
             landmarks=landmarks_base,
-            angulos=angulos_incorrecto
+            angulos=angulos_incorrecto,
         )
         self.stdout.write(self.style.WARNING("  ⚠ Remo incorrecto (espalda): creada"))

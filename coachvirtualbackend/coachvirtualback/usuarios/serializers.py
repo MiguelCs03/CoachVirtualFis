@@ -1,5 +1,10 @@
+"""Serializadores para usuarios y alertas."""
+
+from typing import Any
+
 from rest_framework import serializers
-from .models import Usuario, Alertas
+
+from .models import Alertas, Usuario
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -33,14 +38,14 @@ class UsuarioSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {"email": {"required": True}}
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> Usuario:
         password = validated_data.pop("password", None)
         user = Usuario(**validated_data)
         user.set_password(password or Usuario.objects.make_random_password())
         user.save()
         return user
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Usuario, validated_data: dict[str, Any]) -> Usuario:
         password = validated_data.pop("password", None)
         for k, v in validated_data.items():
             setattr(instance, k, v)
@@ -59,7 +64,7 @@ class AlertasSerializer(serializers.ModelSerializer):
         read_only_fields = ["usuario", "created_at"]
         extra_kwargs = {"estado": {"required": False}}
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> Alertas:
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             if request.user.is_superuser and "usuario" in self.initial_data:

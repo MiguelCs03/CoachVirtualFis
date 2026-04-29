@@ -21,25 +21,28 @@ export function useSpeech({ voiceName, rate = 1, pitch = 1, lang = 'es-ES' } = {
     }
   }, [])
 
-  const speak = useCallback((text) => {
-    if (!window.speechSynthesis) return
-    if (!text) return
-    // Cancelar lo anterior
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.rate = rate
-    u.pitch = pitch
-    u.lang = lang
-    if (voiceName) {
-      const v = voices.find(v => v.name === voiceName)
-      if (v) u.voice = v
-    }
-    u.onstart = () => setSpeaking(true)
-    u.onend = () => setSpeaking(false)
-    u.onerror = () => setSpeaking(false)
-    utteranceRef.current = u
-    window.speechSynthesis.speak(u)
-  }, [rate, pitch, lang, voiceName, voices])
+  const speak = useCallback(
+    (text) => {
+      if (!window.speechSynthesis) return
+      if (!text) return
+      // Cancelar lo anterior
+      window.speechSynthesis.cancel()
+      const u = new SpeechSynthesisUtterance(text)
+      u.rate = rate
+      u.pitch = pitch
+      u.lang = lang
+      if (voiceName) {
+        const v = voices.find((v) => v.name === voiceName)
+        if (v) u.voice = v
+      }
+      u.onstart = () => setSpeaking(true)
+      u.onend = () => setSpeaking(false)
+      u.onerror = () => setSpeaking(false)
+      utteranceRef.current = u
+      window.speechSynthesis.speak(u)
+    },
+    [rate, pitch, lang, voiceName, voices]
+  )
 
   const stop = useCallback(() => {
     window.speechSynthesis?.cancel()
