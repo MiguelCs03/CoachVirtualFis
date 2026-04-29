@@ -1,0 +1,43 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Django-generated files
+*.sqlite3
+*.log
+media/
+staticfiles/
+
+# Test and coverage
+.coverage
+htmlcov/
+*.cover
+*.py,cover
+.pytest_cache/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# IDE / OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.bak
+*.swp

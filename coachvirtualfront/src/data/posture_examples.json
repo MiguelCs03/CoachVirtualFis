@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "El cuerpo tiene una posición de 75 grados.",
+    "completion": "Error: la postura debe ser de 90 grados. Por favor adopte una postura correcta: alinee los hombros, mantenga la espalda recta y ajuste la posición hasta los 90 grados."
+  },
+  {
+    "prompt": "La persona está inclinada a 60 grados.",
+    "completion": "Error: la postura debe ser de 90 grados. Por favor enderece la espalda y ajuste la posición a 90 grados para una postura correcta."
+  },
+  {
+    "prompt": "Postura detectada: 85 grados.",
+    "completion": "Aviso: se recomienda 90 grados. Por favor enderece ligeramente el torso hasta alcanzar 90 grados."
+  },
+  {
+    "prompt": "Se detecta una inclinación de 100 grados.",
+    "completion": "Error: la postura debe ser de 90 grados. Inclínese menos hasta alcanzar 90 grados y mantenga la espalda recta."
+  },
+  {
+    "prompt": "La persona está en 90 grados.",
+    "completion": "Postura correcta: 90 grados. Mantenga esta posición y recuerde hacer pausas y estiramientos regulares."
+  }
+]

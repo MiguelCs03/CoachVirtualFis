@@ -1,0 +1,1 @@
+web: cd coachvirtualbackend/coachvirtualback && python manage.py migrate --noinput && gunicorn coachvirtualback.wsgi:application --bind 0.0.0.0:$PORT

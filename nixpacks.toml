@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway
+# This tells Railway to build from the backend subdirectory
+
+[phases.setup]
+nixPkgs = ["python312", "postgresql"]
+
+[phases.install]
+cmds = ["cd coachvirtualbackend/coachvirtualback && pip install -r requirements.txt"]
+
+[phases.build]
+cmds = ["cd coachvirtualbackend/coachvirtualback && python manage.py collectstatic --noinput"]
+
+[start]
+cmd = "cd coachvirtualbackend/coachvirtualback && python manage.py migrate --noinput && gunicorn coachvirtualback.wsgi:application --bind 0.0.0.0:$PORT"

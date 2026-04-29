@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --industrial-black: #050505;
+  --industrial-dark: #0f0f0f;
+  --industrial-yellow: #ffe600;
+  --industrial-white: #ffffff;
+  --industrial-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background-color: var(--industrial-black);
+  color: var(--industrial-white);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Industrial */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--industrial-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--industrial-yellow);
+}
+
+/* Animaciones personalizadas */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.font-industrial {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Utility for glass effect industrial */
+.glass-industrial {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.border-industrial {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,12 @@
+# Environment and local secrets
+.env
+.env.local
+.env.*.local
+
+# Python cache and artifacts
+__pycache__/
+*.py[cod]
+
+# Local databases and logs
+*.sqlite3
+*.log
