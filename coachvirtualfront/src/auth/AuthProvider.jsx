@@ -12,7 +12,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
     const { accessToken } = restoreTokensFromStorage()
-    if (accessToken) setAccessToken(accessToken)
+    
+    if (!accessToken) {
+      if (mounted) setInitializing(false)
+      return
+    }
+
+    setAccessToken(accessToken)
 
     ;(async () => {
       try {
