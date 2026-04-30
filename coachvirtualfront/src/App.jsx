@@ -47,7 +47,7 @@ function AppContent({ sidebarOpen, setSidebarOpen }) {
       </div>
 
       {/* Panel Google Fit (solo en páginas de ejercicios) */}
-      {showStatsPanel && <Dispositivo />}
+     {/* {showStatsPanel && <Dispositivo />} */}
     </>
   )
 }

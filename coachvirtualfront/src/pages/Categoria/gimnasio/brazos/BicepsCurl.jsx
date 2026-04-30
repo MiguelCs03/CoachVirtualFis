@@ -4,13 +4,8 @@ import YogaPoseDetector from '../../../Yoga/YogaPoseDetector'
 import { calculateBodyAngles } from '../../../../utils/poseUtils'
 import { useSpeech } from '../../../../utils/useSpeech'
 
-/**
- * Vista de rutina de Curl de Bíceps dentro de la jerarquía:
- * /categoria/gimnasio/brazos/biceps-curl
- * Muestra primero una tarjeta descriptiva y al pulsar "Iniciar rutina" despliega
- * el detector de pose y la lógica IA para contar repeticiones y dar feedback.
- */
 export default function BicepsCurl() {
+  // --- ESTADO Y LÓGICA ORIGINAL INTACTA ---
   const [started, setStarted] = useState(false)
   const location = useLocation()
   const passedImage = location?.state?.imageUrl || null
@@ -28,31 +23,26 @@ export default function BicepsCurl() {
   const { speak } = useSpeech({ lang: 'es-ES' })
   const errorFlagRef = useRef(false)
   const lastRepTimeRef = useRef(0)
-  // Historial para suavizado (moving average)
+  
   const elbowHistoryRef = useRef([])
   const shoulderHistoryRef = useRef([])
-  // Control de "holds" para validar pico y extensión correctamente
+  
   const holdStartRef = useRef(null)
-  const holdTypeRef = useRef(null) // 'flexion' | 'extension' | null
+  const holdTypeRef = useRef(null) 
 
-  // Thresholds base (se usan con histeresis)
-  const FLEX_ENTER = 65 // entrar en fase de subida cuando baja de este
-  const FLEX_CONFIRM = 55 // confirmar flexión correcta sostenida
-  const EXT_ENTER = 155 // entrar en fase de bajada cuando supera esto
-  const EXT_CONFIRM = 165 // confirmar extensión completa sostenida
-  // Aliases para compatibilidad con referencias de UI anteriores
-  const FLEXED_THRESHOLD = FLEX_CONFIRM
-  const EXTENDED_THRESHOLD = EXT_CONFIRM
-  const SHOULDER_ERROR_THRESHOLD = 40 // más estricto
-  const HOLD_MS = 350 // tiempo mínimo para validar pico / extensión
-  const MIN_INTERVAL_MS = 1200 // tiempo mínimo entre reps
-  const SMOOTH_WINDOW = 6 // frames para moving average
+  const FLEX_ENTER = 65 
+  const FLEX_CONFIRM = 55 
+  const EXT_ENTER = 155 
+  const EXT_CONFIRM = 165 
+  const SHOULDER_ERROR_THRESHOLD = 40 
+  const HOLD_MS = 350 
+  const MIN_INTERVAL_MS = 1200 
+  const SMOOTH_WINDOW = 6 
 
   const handlePoseDetected = (landmarks) => {
     const angles = calculateBodyAngles(landmarks)
     const { rightElbow, rightShoulder, leftElbow, leftShoulder } = angles
 
-    // Actualizar historia para suavizado
     elbowHistoryRef.current.push(rightElbow)
     shoulderHistoryRef.current.push(rightShoulder)
     if (elbowHistoryRef.current.length > SMOOTH_WINDOW) elbowHistoryRef.current.shift()
@@ -72,60 +62,51 @@ export default function BicepsCurl() {
     const elbowAngle = smoothElbow
     const shoulderAngle = smoothShoulder
 
-    // Validar hombro: si se mueve demasiado durante la subida o bajada cancelar hold
     if (shoulderAngle > SHOULDER_ERROR_THRESHOLD) {
       if (!errorFlagRef.current) {
-        setFeedback('⚠️ ¡No muevas el hombro!')
+        setFeedback('⚠️ ¡NO MUEVAS EL HOMBRO!')
         speak('¡No muevas el hombro, mantén el codo fijo!')
       }
       errorFlagRef.current = true
-      // Romper cualquier hold en progreso
       holdStartRef.current = null
       holdTypeRef.current = null
-      return // no seguimos lógica de rep si hombro se mueve
+      return 
     }
 
-    // Si hombro se mantuvo estable, podemos limpiar la bandera de error para siguiente rep
     if (errorFlagRef.current && shoulderAngle <= SHOULDER_ERROR_THRESHOLD) {
       errorFlagRef.current = false
     }
 
-    // Lógica con histeresis y holds
     if (stage === 'down' || stage === 'ext_hold') {
-      // Detectar inicio de flexión
       if (elbowAngle < FLEX_ENTER) {
         setStage('up_moving')
-        setFeedback('Subiendo... Mantén control')
+        setFeedback('SUBIENDO... MANTÉN CONTROL')
         holdStartRef.current = null
         holdTypeRef.current = null
       }
     } else if (stage === 'up_moving') {
-      // Verificar flexión completa sostenida
       if (elbowAngle < FLEX_CONFIRM) {
         if (!holdStartRef.current) {
           holdStartRef.current = Date.now()
           holdTypeRef.current = 'flexion'
         } else if (Date.now() - holdStartRef.current >= HOLD_MS) {
           setStage('flex_hold')
-          setFeedback('✅ Flexión correcta')
+          setFeedback('✅ FLEXIÓN CORRECTA')
           holdStartRef.current = null
           holdTypeRef.current = null
         }
       } else {
-        // Si se aleja del confirm antes de sostener, reset a down
         if (elbowAngle > EXT_ENTER + 5) {
           setStage('down')
-          setFeedback('Reinicia la subida con control')
+          setFeedback('REINICIA LA SUBIDA CON CONTROL')
         }
       }
     } else if (stage === 'flex_hold') {
-      // Iniciar descenso
       if (elbowAngle > EXT_ENTER) {
         setStage('down_moving')
-        setFeedback('Bajando... Extiende completamente')
+        setFeedback('BAJANDO... EXTIENDE COMPLETAMENTE')
       }
     } else if (stage === 'down_moving') {
-      // Confirmar extensión completa sostenida -> contar rep
       if (elbowAngle > EXT_CONFIRM) {
         if (!holdStartRef.current) {
           holdStartRef.current = Date.now()
@@ -135,34 +116,23 @@ export default function BicepsCurl() {
           if (now - lastRepTimeRef.current >= MIN_INTERVAL_MS) {
             const newCount = repCount + 1
             setRepCount(newCount)
-            setFeedback(`💪 Repetición ${newCount} completa`)
+            setFeedback(`💪 REPETICIÓN ${newCount} COMPLETA`)
             speak(newCount.toString())
             lastRepTimeRef.current = now
           } else {
-            setFeedback('Movimiento demasiado rápido, controla el ritmo')
+            setFeedback('MOVIMIENTO RÁPIDO, CONTROLA EL RITMO')
           }
           setStage('down')
           holdStartRef.current = null
           holdTypeRef.current = null
         }
       } else if (elbowAngle < FLEX_ENTER - 5) {
-        // Se regresó antes de llegar a extensión completa -> volver a subida
         setStage('up_moving')
-        setFeedback('Subida nuevamente, aún no extendiste bien')
+        setFeedback('SUBIDA NUEVAMENTE, FALTA EXTENSIÓN')
         holdStartRef.current = null
         holdTypeRef.current = null
       }
     }
-  }
-
-  const getAngleColor = (angle, isElbow = false) => {
-    if (isElbow) {
-      if (stage === 'flex_hold') return 'text-green-600'
-      if (stage === 'down_moving' || stage === 'up_moving') return 'text-yellow-500'
-      if (stage === 'down' && angle > EXT_CONFIRM) return 'text-green-600'
-      return 'text-blue-500'
-    }
-    return angle < SHOULDER_ERROR_THRESHOLD ? 'text-green-500' : 'text-red-600'
   }
 
   const highlightedAngles = useMemo(() => {
@@ -177,7 +147,7 @@ export default function BicepsCurl() {
   const resetCounter = () => {
     setRepCount(0)
     setStage('down')
-    setFeedback('Contador reiniciado')
+    setFeedback('CONTADOR REINICIADO')
     elbowHistoryRef.current = []
     shoulderHistoryRef.current = []
     holdStartRef.current = null
@@ -185,135 +155,200 @@ export default function BicepsCurl() {
     errorFlagRef.current = false
   }
 
-  // Vista previa antes de iniciar
+  // --- VISTA DE DESCRIPCIÓN (NUEVO ESTILO) ---
   if (!started) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Curl de Bíceps</h1>
-          <p className="text-gray-600 mb-8 text-lg">
-            Rutina asistida por IA para contar tus repeticiones y detectar errores de postura
-            (hombro en movimiento).
-          </p>
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="h-56 flex items-center justify-center overflow-hidden bg-gray-100">
+      <div className="min-h-screen bg-[#0a0a0a] text-[#e0e0e0] font-mono p-4 md:p-8 relative overflow-hidden">
+        {/* Marca de agua de fondo */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+          <h1 className="text-[20vw] font-bold tracking-tighter">TERMINAL</h1>
+        </div>
+
+        <div className="flex justify-between items-center mb-12 relative z-10">
+          <button
+            onClick={() => window.history.back()}
+            className="text-xs text-gray-500 hover:text-white uppercase tracking-wider"
+          >
+            ← CANCELAR_OPERACIÓN
+          </button>
+        </div>
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+          {/* Panel Izquierdo: Visualizador de la Rutina */}
+          <div className="bg-[#1a1a1a] border border-gray-800 rounded-sm p-4 aspect-[4/3] flex flex-col justify-between relative shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 rounded-sm"></div>
+            
+            <div className="flex justify-center items-center flex-grow opacity-80">
               {passedImage ? (
                 <img
                   src={passedImage}
                   alt={passedNombre || 'Curl de bíceps'}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain mix-blend-screen grayscale"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                  <span className="text-6xl">💪</span>
-                </div>
+                <div className="text-[120px] opacity-20">💪</div>
               )}
             </div>
-            <div className="p-6 space-y-4">
-              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                <li>Mantén el hombro estable (&lt;45°)</li>
-                <li>Sube hasta flexionar el codo (&lt;60°)</li>
-                <li>Baja extendiendo el brazo (&gt;160°)</li>
-                <li>La voz te da feedback y cuenta reps</li>
-              </ul>
-              <button
-                onClick={() => setStarted(true)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                Iniciar rutina
-              </button>
+
+            <div className="border border-[#e5b81a]/40 bg-[#e5b81a]/5 text-[#e5b81a] px-3 py-1.5 rounded-sm flex items-center gap-2.5 w-fit self-start relative z-10">
+              <span className="text-xs font-bold tracking-wider">
+                ⛨ AI_ARM_MONITOR_V4.9
+              </span>
             </div>
+          </div>
+
+          {/* Panel Derecho: Datos y Control */}
+          <div className="lg:pl-12 flex flex-col justify-between py-4">
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-[#e5b81a] text-lg">⚙</span>
+                <span className="text-sm text-gray-500 tracking-wider uppercase">
+                  PROTOCOLO_ACTIVO <span className="text-gray-400">TERMINAL</span>
+                </span>
+              </div>
+
+              <h1 className="text-5xl md:text-6xl font-bold text-white tracking-tight uppercase mb-4 leading-none italic">
+                CURL DE<br />BÍCEPS
+              </h1>
+
+              <p className="text-sm text-gray-400 tracking-wide mb-10 pb-4 border-b border-gray-800">
+                MONITOREO DE EJE BRAQUIAL Y ESTABILIDAD ESCAPULAR.
+              </p>
+
+              {/* Especificaciones Técnicas */}
+              <div className="space-y-7 mb-12">
+                <div className="flex items-start gap-5">
+                  <span className="text-[#e5b81a] text-sm font-bold pt-0.5">01</span>
+                  <p className="text-sm tracking-wide leading-relaxed flex-1">
+                    <strong className="text-gray-200">FIJACIÓN:</strong> CODOS ANCLADOS AL TORSO (&lt; 40° HOMBRO).
+                  </p>
+                </div>
+                <div className="flex items-start gap-5">
+                  <span className="text-[#e5b81a] text-sm font-bold pt-0.5">02</span>
+                  <p className="text-sm tracking-wide leading-relaxed flex-1">
+                    <strong className="text-gray-200">RANGO:</strong> FLEXIÓN MÁXIMA REQUERIDA (&lt; 60° CODO).
+                  </p>
+                </div>
+                <div className="flex items-start gap-5">
+                  <span className="text-[#e5b81a] text-sm font-bold pt-0.5">03</span>
+                  <p className="text-sm tracking-wide leading-relaxed flex-1">
+                    <strong className="text-gray-200">CADENCIA:</strong> EXTIENDE EL BRAZO POR COMPLETO (&gt; 165°).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setStarted(true)}
+              className="w-full bg-white hover:bg-gray-200 text-black font-bold py-5 px-8 flex items-center justify-between group transition-all duration-300 rounded-sm"
+            >
+              <span className="text-lg tracking-widest uppercase">
+                V-LINK_START_SYNC
+              </span>
+              <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                ›
+              </span>
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Rutina en progreso
+  // --- VISTA DE RUTINA (NUEVO ESTILO) ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-[#0a0a0a] text-[#e0e0e0] font-mono p-4 md:p-8 relative z-10">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-indigo-900">🏋️ Curl de Bíceps (Rutina)</h1>
+        
+        {/* Header Rutina */}
+        <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <span className="text-[#e5b81a]">⚙</span>
+            CURL DE BÍCEPS <span className="text-gray-500 text-sm font-normal">/ EN EJECUCIÓN</span>
+          </h1>
           <button
             onClick={() => setStarted(false)}
-            className="text-sm text-indigo-600 hover:text-indigo-800 underline"
+            className="text-xs text-gray-500 hover:text-white uppercase tracking-wider underline"
           >
-            Volver a descripción
+            [ FINALIZAR_SESIÓN ]
           </button>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          
+          {/* Panel Izquierdo: Cámara e IA */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="bg-[#1a1a1a] border border-gray-800 rounded-sm relative overflow-hidden shadow-2xl">
               <YogaPoseDetector
                 onPoseDetected={handlePoseDetected}
                 highlightedAngles={highlightedAngles}
               />
-            </div>
-            <div className="bg-white rounded-lg shadow-xl p-4 mt-4">
-              <h3 className="text-lg font-semibold mb-3 text-gray-700">Ángulos Detectados</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                <div className={`p-3 rounded bg-gray-50 ${getAngleColor(currentAngles.rightElbow, true)}`}>
-                  <span className="text-xs text-gray-500">Codo Der</span>
-                  <div className="text-2xl font-bold">{currentAngles.rightElbow}°</div>
-                </div>
-                <div className={`p-3 rounded bg-gray-50 ${getAngleColor(currentAngles.leftElbow, true)}`}>
-                  <span className="text-xs text-gray-500">Codo Izq</span>
-                  <div className="text-2xl font-bold">{currentAngles.leftElbow}°</div>
-                </div>
-                <div className={`p-3 rounded bg-gray-50 ${getAngleColor(currentAngles.rightShoulder, false)}`}>
-                  <span className="text-xs text-gray-500">Hombro Der</span>
-                  <div className="text-2xl font-bold">{currentAngles.rightShoulder}°</div>
-                </div>
-                <div className={`p-3 rounded bg-gray-50 ${getAngleColor(currentAngles.leftShoulder, false)}`}>
-                  <span className="text-xs text-gray-500">Hombro Izq</span>
-                  <div className="text-2xl font-bold">{currentAngles.leftShoulder}°</div>
-                </div>
+              
+              {/* Overlay HUD sutil */}
+              <div className="absolute top-4 left-4 border border-[#e5b81a]/30 bg-black/50 backdrop-blur-sm px-3 py-2 text-[#e5b81a] text-xs space-y-1 rounded-sm">
+                <p>SYS_STATUS: <span className={errorFlagRef.current ? "text-red-500" : "text-green-500"}>
+                  {errorFlagRef.current ? "WARN" : "OK"}
+                </span></p>
+                <p>TRACKING: ACTIVE</p>
               </div>
             </div>
+
+            {/* Métricas de Ángulos (Terminal Style) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'CODO_DER', val: currentAngles.rightElbow, limit: EXT_CONFIRM, isShoulder: false },
+                { label: 'CODO_IZQ', val: currentAngles.leftElbow, limit: EXT_CONFIRM, isShoulder: false },
+                { label: 'HOMB_DER', val: currentAngles.rightShoulder, limit: SHOULDER_ERROR_THRESHOLD, isShoulder: true },
+                { label: 'HOMB_IZQ', val: currentAngles.leftShoulder, limit: SHOULDER_ERROR_THRESHOLD, isShoulder: true }
+              ].map((item, i) => (
+                <div key={i} className="bg-[#1a1a1a] border border-gray-800 p-3 rounded-sm">
+                  <div className="text-[10px] text-gray-500 tracking-wider">{item.label}</div>
+                  <div className={`text-xl font-bold ${
+                    item.isShoulder 
+                      ? (item.val > item.limit ? 'text-red-500' : 'text-gray-300')
+                      : 'text-blue-400'
+                  }`}>
+                    {item.val}°
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Panel Derecho: Datos y Feedback */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-xl p-8 text-center">
-              <h2 className="text-gray-400 font-bold text-xs uppercase tracking-wider mb-2">
-                Repeticiones
+            
+            {/* Repeticiones */}
+            <div className="bg-[#1a1a1a] border border-gray-800 rounded-sm p-8 text-center shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gray-800"></div>
+              <h2 className="text-gray-500 text-xs uppercase tracking-widest mb-2">
+                REPETICIONES_VALIDADAS
               </h2>
-              <div className="text-8xl font-black text-indigo-600">{repCount}</div>
+              <div className="text-[100px] font-black text-white leading-none tracking-tighter">
+                {repCount}
+              </div>
               <button
                 onClick={resetCounter}
-                className="text-indigo-500 hover:text-indigo-700 text-sm underline mt-4"
+                className="mt-6 text-xs text-gray-600 hover:text-[#e5b81a] uppercase tracking-wider transition-colors"
               >
-                Reiniciar contador
+                &gt; RESET_COUNTER
               </button>
             </div>
 
-            <div
-              className={`rounded-lg shadow-xl p-6 border-l-4 transition-all
-                ${
-                  feedback.includes('⚠️')
-                    ? 'bg-yellow-50 border-yellow-400 text-yellow-800'
-                    : feedback.includes('✅') || feedback.includes('completa')
-                      ? 'bg-green-50 border-green-500 text-green-800'
-                      : 'bg-white border-indigo-500 text-gray-700'
-                }`}
-            >
-              <h3 className="font-bold mb-1">Feedback IA:</h3>
-              <p className="text-lg">{feedback}</p>
+            {/* Feedback Box */}
+            <div className={`rounded-sm p-6 shadow-xl border-l-4 transition-colors duration-300 ${
+              feedback.includes('⚠️') 
+                ? 'bg-red-900/20 border-red-500 text-red-400' 
+                : feedback.includes('✅') || feedback.includes('COMPLETA')
+                  ? 'bg-green-900/20 border-green-500 text-green-400'
+                  : 'bg-[#1a1a1a] border-[#e5b81a] text-[#e5b81a]'
+            }`}>
+              <h3 className="text-[10px] uppercase tracking-widest opacity-70 mb-2">
+                LOG_DEL_SISTEMA:
+              </h3>
+              <p className="text-lg font-medium">{feedback}</p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-xl p-6">
-              <h3 className="font-semibold text-gray-700 mb-2">Tips de Ejecución</h3>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>
-                  ⬇️ <strong>Bajada:</strong> Extiende completamente el brazo (&gt;160°).
-                </li>
-                <li>
-                  ⬆️ <strong>Subida:</strong> Flexiona el codo con control hasta &lt;60°.
-                </li>
-                <li>
-                  ⚠️ <strong>Ojo:</strong> Mantén el hombro fijo, no lo muevas durante el curl.
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
