@@ -24,6 +24,7 @@ import {
   Terminal,
   Cpu,
   ArrowRight,
+  Database,
 } from 'lucide-react'
 import { useNotification } from '../context/NotificationContext'
 import routineService from '../services/routineService'
@@ -31,6 +32,7 @@ import ejercicioService from '../services/ejercicioService'
 import detalleMusculoService from '../services/detalleMusculoService'
 import planService from '../services/planService'
 import { useSubscription } from '../context/SubscriptionContext'
+import dashboardService from '../services/dashboardService'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -55,24 +57,28 @@ const Home = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingRutina, setEditingRutina] = useState(null)
 
-  const estadisticas = {
-    entrenamientosSemanales: 4,
-    minutosTotal: 180,
-    caloriasQuemadas: 850,
-    racha: 7,
-  }
+  const [estadisticas, setEstadisticas] = useState({
+    entrenamientosSemanales: 0,
+    minutosTotal: 0,
+    caloriasQuemadas: 0,
+    racha: 0,
+    precisionPromedio: 0
+  })
+  
+  const [erroresFrecuentes, setErroresFrecuentes] = useState([])
+  const [ultimosEntrenamientos, setUltimosEntrenamientos] = useState([])
 
-  const datosGrafica = [
-    { dia: 'LUN', minutos: 30 },
-    { dia: 'MAR', minutos: 45 },
-    { dia: 'MIÉ', minutos: 20 },
-    { dia: 'JUE', minutos: 60 },
-    { dia: 'VIE', minutos: 40 },
-    { dia: 'SÁB', minutos: 50 },
-    { dia: 'DOM', minutos: 35 },
-  ]
+  const [datosGrafica, setDatosGrafica] = useState([
+    { dia: 'LUN', minutos: 0 },
+    { dia: 'MAR', minutos: 0 },
+    { dia: 'MIÉ', minutos: 0 },
+    { dia: 'JUE', minutos: 0 },
+    { dia: 'VIE', minutos: 0 },
+    { dia: 'SÁB', minutos: 0 },
+    { dia: 'DOM', minutos: 0 },
+  ])
 
-  const maxMinutos = Math.max(...datosGrafica.map((d) => d.minutos))
+  const maxMinutos = Math.max(...datosGrafica.map((d) => d.minutos), 1)
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search)
@@ -104,7 +110,21 @@ const Home = () => {
     ;(async () => {
       try {
         setLoadingRutinas(true)
-        const data = await routineService.list()
+        const [data, dashboardData] = await Promise.all([
+          routineService.list(),
+          dashboardService.getStats().catch(err => {
+            console.error('Error cargando stats de dashboard:', err);
+            return null;
+          })
+        ])
+        
+        if (dashboardData) {
+          if (dashboardData.estadisticas) setEstadisticas(dashboardData.estadisticas)
+          if (dashboardData.datosGrafica) setDatosGrafica(dashboardData.datosGrafica)
+          if (dashboardData.erroresFrecuentes) setErroresFrecuentes(dashboardData.erroresFrecuentes)
+          if (dashboardData.ultimosEntrenamientos) setUltimosEntrenamientos(dashboardData.ultimosEntrenamientos)
+        }
+
         if (Array.isArray(data) && data.length > 0) {
           const normalized = data.map((r) => ({
             id: r.id,
@@ -282,6 +302,135 @@ const Home = () => {
           />
         </div>
 
+        {/* Módulo de Dificultades y Precision */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#0f0f0f] border border-white/5 p-6 space-y-6"
+          >
+            <div className="flex items-center gap-3">
+              <Target className="w-5 h-5 text-yellow-400" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/60">PRECISIÓN MEDIA (IA)</h3>
+            </div>
+            <div className="flex items-end gap-3">
+              <span className="text-5xl font-black italic tracking-tighter">{estadisticas.precisionPromedio}%</span>
+            </div>
+            <div className="w-full h-1 bg-white/5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${estadisticas.precisionPromedio}%` }}
+                className="h-full bg-yellow-400" 
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2 bg-[#0f0f0f] border border-white/5 p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <Activity className="w-5 h-5 text-red-500" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/60">ERRORES POSTURALES FRECUENTES (ÚLTIMOS 7 DÍAS)</h3>
+            </div>
+            {erroresFrecuentes.length > 0 ? (
+              <div className="grid sm:grid-cols-3 gap-4">
+                {erroresFrecuentes.map((err, idx) => (
+                  <div key={idx} className="bg-white/[0.02] border border-white/5 p-4 flex flex-col gap-2">
+                    <span className="text-2xl font-black text-red-500">{err.cantidad}x</span>
+                    <span className="text-[10px] font-mono tracking-tighter text-white/70 leading-tight uppercase">{err.error}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-20 text-[10px] font-mono tracking-widest text-white/20 uppercase">
+                NO HAY ERRORES REGISTRADOS AÚN.
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Módulo de Inteligencia y Logs */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* AI Insight */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-[#0f0f0f] border-l-4 border-l-yellow-400 p-6 flex flex-col justify-between group relative overflow-hidden"
+          >
+            <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
+              <Cpu className="w-48 h-48 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">EVALUACIÓN FISIOTERAPÉUTICA (IA)</h3>
+              </div>
+              {erroresFrecuentes.length > 0 ? (
+                <div className="space-y-4 relative z-10">
+                  <p className="text-sm font-mono text-white/80 leading-relaxed uppercase">
+                    SE HA DETECTADO UNA TENDENCIA POSTURAL: <span className="text-yellow-400 font-bold">"{erroresFrecuentes[0].error}"</span>. 
+                    PARA UNA REHABILITACIÓN EFECTIVA Y EVITAR LESIONES, ENFÓQUESE EN LA ESTABILIDAD Y DISMINUYA LA VELOCIDAD DE EJECUCIÓN EN SUS PRÓXIMAS TERAPIAS.
+                  </p>
+                  <div className="inline-block border border-yellow-400/30 bg-yellow-400/10 text-yellow-400 px-3 py-1 text-[9px] font-black tracking-widest uppercase">
+                    ACCIÓN SUGERIDA: CORRECCIÓN BIOMECÁNICA
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 relative z-10">
+                  <p className="text-sm font-mono text-green-400 leading-relaxed uppercase">
+                    SU DESEMPEÑO BIOMECÁNICO ES EXCELENTE. SUS MOVIMIENTOS FAVORECEN UNA ÓPTIMA REHABILITACIÓN.
+                  </p>
+                  <div className="inline-block border border-green-500/30 bg-green-500/10 text-green-500 px-3 py-1 text-[9px] font-black tracking-widest uppercase">
+                    ESTADO: SALUD POSTURAL ÓPTIMA
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Activity Log */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-2 bg-[#0d0d0d] border border-white/5 p-6"
+          >
+            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+              <div className="flex items-center gap-3">
+                <Database className="w-5 h-5 text-white/40" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">HISTORIAL DE SESIONES Y TERAPIAS</h3>
+              </div>
+            </div>
+            {ultimosEntrenamientos.length > 0 ? (
+              <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                {ultimosEntrenamientos.map((entrenamiento, idx) => (
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/20 transition-colors gap-3">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-2 h-2 rounded-full ${entrenamiento.completado ? 'bg-green-500' : 'bg-yellow-400'}`} />
+                      <div>
+                        <p className="text-xs font-black uppercase text-white tracking-widest">{entrenamiento.ejercicio}</p>
+                        <p className="text-[9px] font-mono text-white/40">{entrenamiento.fecha}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6 text-[10px] font-mono tracking-widest">
+                      <span className="text-white/60">REPS: <span className="text-white">{entrenamiento.repeticiones}</span></span>
+                      <span className="text-white/60">PRECISIÓN: <span className={entrenamiento.precision >= 80 ? 'text-green-400' : 'text-yellow-400'}>{entrenamiento.precision}%</span></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-32 space-y-3">
+                <Activity className="w-6 h-6 text-white/10" />
+                <span className="text-[10px] font-mono tracking-widest text-white/20 uppercase">
+                  AÚN NO HAY SESIONES REGISTRADAS. INICIE SU REHABILITACIÓN O ENTRENAMIENTO.
+                </span>
+              </div>
+            )}
+          </motion.div>
+        </div>
+
         {/* Main Section: Graph + Explorer */}
         <div className="grid lg:grid-cols-3 gap-6">
           <motion.div
@@ -296,9 +445,9 @@ const Home = () => {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
                 <div className="w-1.5 h-6 bg-yellow-400" />
-                <h2 className="text-lg font-black uppercase tracking-widest">FLUJO DE ACTIVIDAD</h2>
+                <h2 className="text-lg font-black uppercase tracking-widest">FLUJO DE SESIONES</h2>
               </div>
-              <span className="text-[10px] font-mono text-white/40">ÚLTIMOS 7 DÍAS // LOG</span>
+              <span className="text-[10px] font-mono text-white/40">HISTORIAL DE LOS ÚLTIMOS 7 DÍAS</span>
             </div>
 
             <div className="flex items-end justify-between h-48 gap-3">
@@ -615,7 +764,7 @@ const RoutineCard = ({ rutina, onStart, onDelete, onEdit }) => (
 
       <div className="space-y-2">
         <div className="flex justify-between items-center text-[9px] font-black text-white/40 tracking-widest uppercase">
-          <span>AVANCE_LOG</span>
+          <span>PROGRESO DE REHABILITACIÓN</span>
           <span className="text-yellow-400">{rutina.progreso}%</span>
         </div>
         <div className="h-1 bg-white/5 w-full relative overflow-hidden">

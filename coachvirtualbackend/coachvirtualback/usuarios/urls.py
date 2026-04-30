@@ -20,6 +20,7 @@ from .controllers.usuario_controller import (
     UsuarioDetalleVista,
     UsuarioListaCrearVista,
 )
+from .controllers.dashboard_controller import DashboardStatsView
 
 urlpatterns = [
     # Usuario
@@ -43,4 +44,7 @@ urlpatterns = [
     path("alertas/motivation/", trigger_motivation, name="alertas-motivation"),
     path("alertas/<int:pk>/read/", mark_as_read, name="alertas-mark-read"),
     path("alertas/mark-all-read/", mark_all_read, name="alertas-mark-all-read"),
+
+    # Dashboard
+    path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
 ]
