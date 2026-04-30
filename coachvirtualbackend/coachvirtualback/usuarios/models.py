@@ -176,3 +176,38 @@ class EjerciciosAsignados(models.Model):
 
     def __str__(self):
         return f"{self.ejercicio.nombre} - {self.series}x{self.repeticiones}"
+
+
+class HistorialEntrenamiento(models.Model):
+    """
+    Registro individual de un entrenamiento o sesión de fisioterapia.
+    Permite hacer el seguimiento de mejoras (reps, tiempo, precisión).
+    """
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='historial_entrenamientos')
+    nombre_ejercicio = models.CharField(max_length=100) # Ej: "Flexiones de Pecho", "Plancha"
+    fecha = models.DateTimeField(auto_now_add=True)
+    
+    # Métricas de rendimiento
+    repeticiones = models.IntegerField(default=0)
+    tiempo_segundos = models.FloatField(default=0.0)
+    precision_porcentaje = models.FloatField(default=100.0, help_text="Precisión general del ejercicio calculada por la IA")
+    completado = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.nombre_ejercicio} ({self.fecha.date()})"
+
+
+class ErrorPostural(models.Model):
+    """
+    Registro de errores detectados durante un HistorialEntrenamiento específico.
+    Se utiliza para alimentar el Dashboard de Errores Posturales.
+    """
+    historial = models.ForeignKey(HistorialEntrenamiento, on_delete=models.CASCADE, related_name='errores')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    fecha = models.DateTimeField(auto_now_add=True)
+    
+    tipo_error = models.CharField(max_length=150, help_text="Ej: 'Caderas no estables', 'Rodillas dobladas', 'Codos < 90 grados'")
+    cantidad = models.IntegerField(default=1, help_text="Número de veces que ocurrió el error en la sesión")
+
+    def __str__(self):
+        return f"Error: {self.tipo_error} - {self.historial.nombre_ejercicio}"

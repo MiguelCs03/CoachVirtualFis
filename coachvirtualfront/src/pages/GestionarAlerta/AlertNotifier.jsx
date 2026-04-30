@@ -203,6 +203,8 @@ export default function AlertNotifier({ intervalMs = 10000, maxVisible = 4, card
       }
 
       if (!cancelled) {
+        // Se comenta el polling repetitivo a petición del usuario para no saturar el network
+        /*
         timerRef.current = setInterval(async () => {
           try {
             const news = await alertaService.listMineSince(lastIdRef.current)
@@ -214,6 +216,7 @@ export default function AlertNotifier({ intervalMs = 10000, maxVisible = 4, card
             // reintenta en el siguiente tick
           }
         }, intervalMs)
+        */
       }
     })()
 
