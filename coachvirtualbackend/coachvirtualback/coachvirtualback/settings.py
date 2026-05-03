@@ -178,22 +178,32 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ==========================================
-# CONFIGURACIÓN CORS (SIN RESTRICCIONES)
+# CONFIGURACIÓN CORS
 # ==========================================
-
-# Permitir solicitudes desde cualquier origen (Frontend, Postman, Mobile, etc.)
-CORS_ALLOW_ALL_ORIGINS = True
 
 # Permitir envío de cookies/headers de autorización
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF trusted origins para producción (HTTPS)
-CSRF_TRUSTED_ORIGINS = [
-    "https://coach-virtual.netlify.app",
-    "https://coachvirtual-production.up.railway.app",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
 # URL del frontend para redirecciones (Stripe, etc.)
-FRONTEND_URL = config("FRONTEND_URL", default="https://coach-virtual.netlify.app")
+FRONTEND_URL = config("FRONTEND_URL", default="")
+
+def _parse_env_list(value):
+    if not value:
+        return []
+    if isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        items = [item.strip() for item in str(value).split(",") if item.strip()]
+    # Remove trailing slashes to satisfy django-cors-headers
+    return [item.rstrip("/") for item in items]
+
+# CORS: permitir cambiar entre prod/local con una sola URL/env
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
+CORS_ALLOWED_ORIGINS = _parse_env_list(config("CORS_ALLOWED_ORIGINS", default=""))
+if not CORS_ALLOWED_ORIGINS and FRONTEND_URL:
+    CORS_ALLOWED_ORIGINS = [FRONTEND_URL]
+
+# CSRF trusted origins (HTTPS/HTTP) - usa la misma URL del frontend por defecto
+CSRF_TRUSTED_ORIGINS = _parse_env_list(config("CSRF_TRUSTED_ORIGINS", default=""))
+if not CSRF_TRUSTED_ORIGINS and FRONTEND_URL:
+    CSRF_TRUSTED_ORIGINS = [FRONTEND_URL]
