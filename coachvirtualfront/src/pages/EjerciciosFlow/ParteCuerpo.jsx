@@ -15,7 +15,7 @@ import {
   Target,
   ChevronRight,
 } from 'lucide-react'
-import musculoService from '../../services/musculoService'
+import musculoService from '../../services/MusculoService'
 import tipoService from '../../services/TipoService'
 
 /**

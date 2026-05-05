@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import ejercicioAsignadoService from '../../services/ejercicioAsignadoService.js'
 import detalleMusculoService from '../../services/DetalleMusculoService.js'
-import musculoService from '../../services/musculoService.js'
+import musculoService from '../../services/MusculoService.js'
 import ejercicioService from '../../services/EjercicioService.js'
 import Paginacion from '../../components/Paginacion'
 

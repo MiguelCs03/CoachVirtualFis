@@ -1,7 +1,7 @@
 // src/pages/DetalleMusculo/DetalleMusculo.jsx
 import React, { Component } from 'react'
 import detalleMusculoService from '../../services/DetalleMusculoService'
-import musculoService from '../../services/musculoService'
+import musculoService from '../../services/MusculoService'
 import ejercicioService from '../../services/EjercicioService'
 import tipoService from '../../services/TipoService'
 import Paginacion from '../../components/Paginacion'

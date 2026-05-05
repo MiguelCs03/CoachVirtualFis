@@ -19,7 +19,7 @@ import {
 import detalleMusculoService from '../../services/DetalleMusculoService'
 import ejercicioService from '../../services/EjercicioService'
 import tipoService from '../../services/TipoService'
-import musculoService from '../../services/musculoService'
+import musculoService from '../../services/MusculoService'
 
 /**
  * VISTA DE SELECCCIÓN DE EJERCICIO INDUSTRIAL

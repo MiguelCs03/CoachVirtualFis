@@ -1,6 +1,6 @@
 // src/pages/musculos/Musculo.jsx
 import React, { Component } from 'react'
-import musculoService from '../../services/musculoService'
+import musculoService from '../../services/MusculoService'
 import tipoService from '../../services/TipoService'
 
 class Musculo extends Component {
