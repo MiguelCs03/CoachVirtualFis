@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { alertaService } from '../../services/alertaService'
+import { alertaService } from '../../services/AlertaService'
 import notificationService from '../../services/notificationService'
 import api from '../../api/api'
 import { useAuth } from '../../auth/useAuth'

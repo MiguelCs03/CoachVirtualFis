@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { alertaService } from '../../services/alertaService'
+import { alertaService } from '../../services/AlertaService'
 import Paginacion from '../../components/Paginacion' // ⬅️ ajusta la ruta si es necesario
 
 const fmtDateTime = (iso) => {

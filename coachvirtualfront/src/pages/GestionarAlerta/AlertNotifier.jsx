@@ -1,6 +1,6 @@
 // src/pages/GestionarAlerta/AlertNotifier.jsx
 import { useEffect, useRef, useState } from 'react'
-import { alertaService } from '../../services/alertaService'
+import { alertaService } from '../../services/AlertaService'
 import notificationService from '../../services/notificationService'
 import { useNavigate } from 'react-router-dom'
 import {
