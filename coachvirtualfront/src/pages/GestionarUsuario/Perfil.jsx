@@ -17,7 +17,7 @@ import {
   Terminal,
   Cpu,
 } from 'lucide-react'
-import { fetchMyProfile, updateUser } from '../../services/usuarioService'
+import { fetchMyProfile, updateUser } from '../../services/UsuarioService'
 import { useNotification } from '../../context/NotificationContext'
 import { useNavigate } from 'react-router-dom'
 

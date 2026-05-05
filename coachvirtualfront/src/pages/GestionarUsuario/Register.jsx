@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
-import { createUser, buildUserPayload } from '../../services/usuarioService'
+import { createUser, buildUserPayload } from '../../services/UsuarioService'
 
 class Register extends Component {
   state = {

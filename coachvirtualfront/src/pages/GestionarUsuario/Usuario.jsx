@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
-import { listUsers, createUser, updateUser, deleteUser } from '../../services/usuarioService'
+import { listUsers, createUser, updateUser, deleteUser } from '../../services/UsuarioService'
 import Paginacion from '../../components/Paginacion'
 
 class Usuario extends Component {
