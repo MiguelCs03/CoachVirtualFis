@@ -27,7 +27,7 @@ import {
   Database,
 } from 'lucide-react'
 import { useNotification } from '../context/NotificationContext'
-import rutinaService from '../services/rutinaService'
+import rutinaService from '../services/RutinaService'
 import ejercicioService from '../services/ejercicioService'
 import detalleMusculoService from '../services/detalleMusculoService'
 import planService from '../services/planService'

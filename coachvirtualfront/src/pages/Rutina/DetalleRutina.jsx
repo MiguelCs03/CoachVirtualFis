@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import rutinaService from '../../services/rutinaService'
+import rutinaService from '../../services/RutinaService'
 import { PlayCircle, ArrowLeft, Clock, Activity, Target } from 'lucide-react'
 import routeForExercise from '../../utils/exerciseRouter'
 // import { useNavigate } from 'react-router-dom';
