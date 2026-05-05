@@ -1,7 +1,7 @@
 // src/pages/GestionarAlerta/AlertNotifier.jsx
 import { useEffect, useRef, useState } from 'react'
 import { alertaService } from '../../services/AlertaService'
-import notificationService from '../../services/notificationService'
+import notificationService from '../../services/NotificationService'
 import { useNavigate } from 'react-router-dom'
 import {
   CreditCard,

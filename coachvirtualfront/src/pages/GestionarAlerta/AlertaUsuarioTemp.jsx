@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { alertaService } from '../../services/AlertaService'
-import notificationService from '../../services/notificationService'
+import notificationService from '../../services/NotificationService'
 import api from '../../api/api'
 import { useAuth } from '../../auth/useAuth'
 import { Bell, RefreshCw, Clock, AlertCircle, Inbox } from 'lucide-react'
