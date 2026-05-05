@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import ejercicioService from '../../services/ejercicioService'
+import ejercicioService from '../../services/EjercicioService'
 import Paginacion from '../../components/Paginacion'
 
 class Ejercicio extends Component {

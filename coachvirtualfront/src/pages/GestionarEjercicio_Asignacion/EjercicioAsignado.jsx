@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import ejercicioAsignadoService from '../../services/ejercicioAsignadoService.js'
 import detalleMusculoService from '../../services/detalleMusculoService.js'
 import musculoService from '../../services/musculoService.js'
-import ejercicioService from '../../services/ejercicioService.js'
+import ejercicioService from '../../services/EjercicioService.js'
 import Paginacion from '../../components/Paginacion'
 
 class EjercicioAsignado extends Component {

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { useNotification } from '../context/NotificationContext'
 import rutinaService from '../services/RutinaService'
-import ejercicioService from '../services/ejercicioService'
+import ejercicioService from '../services/EjercicioService'
 import detalleMusculoService from '../services/detalleMusculoService'
 import planService from '../services/planService'
 import { useSubscription } from '../context/SubscriptionContext'

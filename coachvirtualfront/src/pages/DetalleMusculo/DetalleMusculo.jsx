@@ -2,7 +2,7 @@
 import React, { Component } from 'react'
 import detalleMusculoService from '../../services/detalleMusculoService'
 import musculoService from '../../services/musculoService'
-import ejercicioService from '../../services/ejercicioService'
+import ejercicioService from '../../services/EjercicioService'
 import tipoService from '../../services/tipoService'
 import Paginacion from '../../components/Paginacion'
 
