@@ -13,7 +13,7 @@ import {
   Target,
   Terminal,
 } from 'lucide-react'
-import tipoService from '../../services/tipoService'
+import tipoService from '../../services/TipoService'
 import { useNotification } from '../../context/NotificationContext'
 
 export default function CategoriaEjercicios() {

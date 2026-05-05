@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 import detalleMusculoService from '../../services/DetalleMusculoService'
 import musculoService from '../../services/musculoService'
 import ejercicioService from '../../services/EjercicioService'
-import tipoService from '../../services/tipoService'
+import tipoService from '../../services/TipoService'
 import Paginacion from '../../components/Paginacion'
 
 /**

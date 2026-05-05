@@ -1,6 +1,6 @@
 // src/pages/tipos/Tipo.jsx
 import React, { Component } from 'react'
-import tipoService from '../../services/tipoService'
+import tipoService from '../../services/TipoService'
 import Paginacion from '../../components/Paginacion' // ajusta la ruta si hace falta
 
 class GestionarTipo extends Component {

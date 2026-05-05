@@ -16,7 +16,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import musculoService from '../../services/musculoService'
-import tipoService from '../../services/tipoService'
+import tipoService from '../../services/TipoService'
 
 /**
  * PÁGINA DE SELECCIÓN DE PARTE DEL CUERPO INDUSTRIAL

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import detalleMusculoService from '../../services/DetalleMusculoService'
 import ejercicioService from '../../services/EjercicioService'
-import tipoService from '../../services/tipoService'
+import tipoService from '../../services/TipoService'
 import musculoService from '../../services/musculoService'
 
 /**
