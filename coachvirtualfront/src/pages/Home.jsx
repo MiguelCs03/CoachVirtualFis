@@ -27,7 +27,7 @@ import {
   Database,
 } from 'lucide-react'
 import { useNotification } from '../context/NotificationContext'
-import routineService from '../services/routineService'
+import rutinaService from '../services/rutinaService'
 import ejercicioService from '../services/ejercicioService'
 import detalleMusculoService from '../services/detalleMusculoService'
 import planService from '../services/planService'
@@ -111,7 +111,7 @@ const Home = () => {
       try {
         setLoadingRutinas(true)
         const [data, dashboardData] = await Promise.all([
-          routineService.list(),
+          rutinaService.list(),
           dashboardService.getStats().catch(err => {
             console.error('Error cargando stats de dashboard:', err);
             return null;
@@ -207,7 +207,7 @@ const Home = () => {
     }
 
     try {
-      const created = await routineService.create(payload)
+      const created = await rutinaService.create(payload)
       showNotification('Nuevo protocolo de entrenamiento sincronizado.', 'success')
       setRutinas((prev) => [
         {
@@ -238,7 +238,7 @@ const Home = () => {
 
   const handleDeleteRutina = async (id) => {
     try {
-      await routineService.delete(id)
+      await rutinaService.delete(id)
       setRutinas((prev) => prev.filter((r) => r.id !== id))
       showNotification('Protocolo eliminado permanentemente.', 'success')
     } catch (err) {

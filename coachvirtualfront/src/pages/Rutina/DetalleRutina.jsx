@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import routineService from '../../services/routineService'
+import rutinaService from '../../services/rutinaService'
 import { PlayCircle, ArrowLeft, Clock, Activity, Target } from 'lucide-react'
 import routeForExercise from '../../utils/exerciseRouter'
 // import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ export default function DetalleRutina() {
     ;(async () => {
       setLoading(true)
       try {
-        const data = await routineService.getById(id)
+        const data = await rutinaService.getById(id)
         // si data tiene datos embebidos en string, tratar de parsear
         if (data && typeof data === 'string') {
           try {
