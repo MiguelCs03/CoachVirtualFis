@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSubscription } from '../../context/SubscriptionContext'
 import { useAuth } from '../../auth/useAuth'
-import planService from '../../services/planService'
+import planService from '../../services/PlanService'
 import api from '../../api/api'
 import {
   Crown,

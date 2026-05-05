@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { History, Eye, X, RefreshCw } from 'lucide-react'
-import planService from '../../services/planService'
+import planService from '../../services/PlanService'
 
 export default function HistorialPagos() {
   const [historial, setHistorial] = useState([])

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Eye, X, Save, CheckCircle } from 'lucide-react'
-import planService from '../../services/planService'
+import planService from '../../services/PlanService'
 
 export default function PlanesAdmin() {
   const [historial, setHistorial] = useState([])

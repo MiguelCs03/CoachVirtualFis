@@ -30,7 +30,7 @@ import { useNotification } from '../context/NotificationContext'
 import rutinaService from '../services/RutinaService'
 import ejercicioService from '../services/EjercicioService'
 import detalleMusculoService from '../services/DetalleMusculoService'
-import planService from '../services/planService'
+import planService from '../services/PlanService'
 import { useSubscription } from '../context/SubscriptionContext'
 import dashboardService from '../services/dashboardService'
 
