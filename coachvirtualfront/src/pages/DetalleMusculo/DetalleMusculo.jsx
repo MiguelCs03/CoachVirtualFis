@@ -1,6 +1,6 @@
 // src/pages/DetalleMusculo/DetalleMusculo.jsx
 import React, { Component } from 'react'
-import detalleMusculoService from '../../services/detalleMusculoService'
+import detalleMusculoService from '../../services/DetalleMusculoService'
 import musculoService from '../../services/musculoService'
 import ejercicioService from '../../services/EjercicioService'
 import tipoService from '../../services/tipoService'

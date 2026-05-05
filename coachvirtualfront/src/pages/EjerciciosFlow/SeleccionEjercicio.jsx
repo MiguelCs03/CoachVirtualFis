@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react'
-import detalleMusculoService from '../../services/detalleMusculoService'
+import detalleMusculoService from '../../services/DetalleMusculoService'
 import ejercicioService from '../../services/EjercicioService'
 import tipoService from '../../services/tipoService'
 import musculoService from '../../services/musculoService'
