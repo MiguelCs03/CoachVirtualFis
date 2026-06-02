@@ -211,3 +211,31 @@ class ErrorPostural(models.Model):
 
     def __str__(self):
         return f"Error: {self.tipo_error} - {self.historial.nombre_ejercicio}"
+
+
+class PerfilClinico(models.Model):
+    """
+    Perfil clínico y deportivo de un usuario / paciente.
+    Se llena la primera vez que ingresa a la aplicación mediante un Wizard.
+    """
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_clinico')
+    objetivo_principal = models.CharField(max_length=100, blank=True, null=True) # e.g. "Rehabilitación", "Fuerza"
+    experiencia_deporte = models.CharField(max_length=50, blank=True, null=True) # e.g. "Principiante", "Intermedio"
+    dias_entrenamiento = models.IntegerField(default=3)
+    
+    # Checkboxes de lesiones predefinidas (HU05)
+    tiene_dolor_lumbar = models.BooleanField(default=False)
+    tiene_lesion_menisco = models.BooleanField(default=False)
+    tiene_dolor_cervical = models.BooleanField(default=False)
+    tiene_lesion_hombro = models.BooleanField(default=False)
+    tiene_tendinitis = models.BooleanField(default=False)
+    
+    otras_lesiones = models.TextField(blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
+    
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Perfil Clínico - {self.usuario.email}"
+

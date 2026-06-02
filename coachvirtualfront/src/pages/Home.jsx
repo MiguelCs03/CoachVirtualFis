@@ -33,6 +33,8 @@ import detalleMusculoService from '../services/DetalleMusculoService'
 import planService from '../services/PlanService'
 import { useSubscription } from '../context/SubscriptionContext'
 import dashboardService from '../services/dashboardService'
+import PerfilClinicoWizard from '../components/PerfilClinicoWizard'
+import api from '../api/api'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -42,6 +44,8 @@ const Home = () => {
 
   const [mounted, setMounted] = useState(false)
   const [hoveredBar, setHoveredBar] = useState(null)
+  const [chartType, setChartType] = useState('bar')
+  const [showWizard, setShowWizard] = useState(false)
   const [rutinas, setRutinas] = useState([])
   const [loadingRutinas, setLoadingRutinas] = useState(true)
 
@@ -107,6 +111,14 @@ const Home = () => {
 
   useEffect(() => {
     setMounted(true)
+
+    // Verificar si el usuario ya llenó el Perfil Clínico
+    api.get('/usuarios/perfil-clinico/').catch((err) => {
+      if (err.response?.status === 404) {
+        setShowWizard(true)
+      }
+    })
+
     ;(async () => {
       try {
         setLoadingRutinas(true)
@@ -147,7 +159,7 @@ const Home = () => {
     })()
   }, [showNotification])
 
-  const handleExplorarEjercicios = () => navigate('/ejercicios/categoria')
+  const handleExplorarEjercicios = () => navigate('/catalogo-ejercicios')
 
   const openCreateModal = async () => {
     setShowCreateModal(true)
@@ -447,41 +459,148 @@ const Home = () => {
                 <div className="w-1.5 h-6 bg-yellow-400" />
                 <h2 className="text-lg font-black uppercase tracking-widest">FLUJO DE SESIONES</h2>
               </div>
-              <span className="text-[10px] font-mono text-white/40">HISTORIAL DE LOS ÚLTIMOS 7 DÍAS</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setChartType('bar')}
+                  className={cx(
+                    'px-3 py-1 font-mono text-[9px] tracking-widest border transition-all rounded-none uppercase',
+                    chartType === 'bar' ? 'bg-yellow-400 border-yellow-400 text-black font-black' : 'bg-transparent border-white/10 text-white/50 hover:border-white/20'
+                  )}
+                >
+                  BARRAS
+                </button>
+                <button
+                  onClick={() => setChartType('line')}
+                  className={cx(
+                    'px-3 py-1 font-mono text-[9px] tracking-widest border transition-all rounded-none uppercase',
+                    chartType === 'line' ? 'bg-yellow-400 border-yellow-400 text-black font-black' : 'bg-transparent border-white/10 text-white/50 hover:border-white/20'
+                  )}
+                >
+                  LÍNEAS
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-end justify-between h-48 gap-3">
-              {datosGrafica.map((dato, i) => (
-                <div
-                  key={i}
-                  className="flex-1 flex flex-col items-center gap-2"
-                  onMouseEnter={() => setHoveredBar(i)}
-                  onMouseLeave={() => setHoveredBar(null)}
-                >
-                  <div className="relative w-full flex items-end justify-center h-40">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${(dato.minutos / maxMinutos) * 100}%` }}
-                      transition={{ delay: i * 0.1, duration: 0.8 }}
-                      className={cx(
-                        'w-full transition-all cursor-crosshair border-t border-x border-white/10',
-                        hoveredBar === i
-                          ? 'bg-yellow-400 shadow-[0_0_20px_rgba(255,230,0,0.3)]'
-                          : 'bg-white/[0.03]'
-                      )}
-                    />
-                  </div>
-                  <span
-                    className={cx(
-                      'text-[10px] font-mono tracking-tighter',
-                      hoveredBar === i ? 'text-yellow-400' : 'text-white/40'
-                    )}
+            {chartType === 'line' ? (
+              <div className="w-full h-40 flex items-center justify-center relative select-none">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 600 160" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#facc15" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Grid Lines */}
+                  <line x1="0" y1="40" x2="600" y2="40" stroke="rgba(255,255,255,0.05)" strokeDasharray="3" />
+                  <line x1="0" y1="80" x2="600" y2="80" stroke="rgba(255,255,255,0.05)" strokeDasharray="3" />
+                  <line x1="0" y1="120" x2="600" y2="120" stroke="rgba(255,255,255,0.05)" strokeDasharray="3" />
+                  <line x1="0" y1="160" x2="600" y2="160" stroke="rgba(255,255,255,0.1)" />
+
+                  {/* Draw the Area under the line */}
+                  <path
+                    d={`
+                      M 0 160
+                      ${datosGrafica.map((d, idx) => {
+                        const x = (idx * 600) / 6;
+                        const y = 160 - ((d.minutos / maxMinutos) * 120 + 10);
+                        return `L ${x} ${y}`;
+                      }).join(' ')}
+                      L 600 160
+                      Z
+                    `}
+                    fill="url(#chartGradient)"
+                  />
+
+                  {/* Draw the Stroke Path */}
+                  <motion.path
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 1 }}
+                    d={`
+                      ${datosGrafica.map((d, idx) => {
+                        const x = (idx * 600) / 6;
+                        const y = 160 - ((d.minutos / maxMinutos) * 120 + 10);
+                        return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
+                      }).join(' ')}
+                    `}
+                    fill="none"
+                    stroke="#facc15"
+                    strokeWidth="3"
+                  />
+
+                  {/* Data Points */}
+                  {datosGrafica.map((d, idx) => {
+                    const x = (idx * 600) / 6;
+                    const y = 160 - ((d.minutos / maxMinutos) * 120 + 10);
+                    return (
+                      <g key={idx} className="cursor-crosshair group">
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="5"
+                          fill="#000"
+                          stroke="#facc15"
+                          strokeWidth="2"
+                        />
+                        <text
+                          x={x}
+                          y={y - 12}
+                          textAnchor="middle"
+                          fill="#facc15"
+                          className="font-mono text-[9px] font-black"
+                        >
+                          {d.minutos}m
+                        </text>
+                        {/* Day label */}
+                        <text
+                          x={x}
+                          y="155"
+                          textAnchor="middle"
+                          fill="rgba(255,255,255,0.4)"
+                          className="font-mono text-[8px]"
+                        >
+                          {d.dia}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            ) : (
+              <div className="flex items-end justify-between h-48 gap-3">
+                {datosGrafica.map((dato, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 flex flex-col items-center gap-2"
+                    onMouseEnter={() => setHoveredBar(i)}
+                    onMouseLeave={() => setHoveredBar(null)}
                   >
-                    {dato.dia}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <div className="relative w-full flex items-end justify-center h-40">
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${(dato.minutos / maxMinutos) * 100}%` }}
+                        transition={{ delay: i * 0.1, duration: 0.8 }}
+                        className={cx(
+                          'w-full transition-all cursor-crosshair border-t border-x border-white/10',
+                          hoveredBar === i
+                            ? 'bg-yellow-400 shadow-[0_0_20px_rgba(255,230,0,0.3)]'
+                            : 'bg-white/[0.03]'
+                        )}
+                      />
+                    </div>
+                    <span
+                      className={cx(
+                        'text-[10px] font-mono tracking-tighter',
+                        hoveredBar === i ? 'text-yellow-400' : 'text-white/40'
+                      )}
+                    >
+                      {dato.dia}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           <motion.div
@@ -677,6 +796,12 @@ const Home = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showWizard && (
+          <PerfilClinicoWizard onComplete={() => setShowWizard(false)} />
         )}
       </AnimatePresence>
     </div>

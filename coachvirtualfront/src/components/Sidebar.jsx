@@ -94,6 +94,8 @@ export default function Sidebar({ open, onClose, closeOnNavigate = false }) {
     () => [
       { to: '/home', label: 'PANEL PRINCIPAL', icon: Home },
       { to: '/perfil', label: 'DATOS DEL ATLETA', icon: UserCircle2 },
+      { to: '/catalogo-ejercicios', label: 'CATÁLOGO DE EJERCICIOS', icon: Dumbbell },
+      { to: '/historial-sesiones', label: 'HISTORIAL DE SESIONES', icon: History },
       { to: '/planes', label: 'CENTRO DE MEJORAS', icon: Crown },
       { to: '/mis-alertas', label: 'CENTRO DE DATOS', icon: Bell },
     ],

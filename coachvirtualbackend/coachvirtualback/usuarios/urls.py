@@ -21,8 +21,14 @@ from .controllers.usuario_controller import (
     UsuarioListaCrearVista,
 )
 from .controllers.dashboard_controller import DashboardStatsView
+from .controllers.perfil_clinico_controller import PerfilClinicoView
+from .controllers.historial_controller import HistorialPaginadoView
 
 urlpatterns = [
+    # Perfil Clínico y Historial Paginado (HUs)
+    path("usuarios/perfil-clinico/", PerfilClinicoView.as_view(), name="perfil-clinico"),
+    path("usuarios/historial-paginado/", HistorialPaginadoView.as_view(), name="historial-paginado"),
+
     # Usuario
     path("usuarios/me/", MeView.as_view(), name="me"),
     path("usuarios/", UsuarioListaCrearVista.as_view(), name="usuario-lista-crear"),

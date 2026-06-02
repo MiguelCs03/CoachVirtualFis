@@ -7,6 +7,8 @@ import WizardRutinaIA from '../pages/RutinasIA/WizardRutinaIA'
 import Home from '../pages/Home'
 import Perfil from '../pages/GestionarUsuario/Perfil'
 import Usuario from '../pages/GestionarUsuario/Usuario'
+import CatalogoEjercicios from '../pages/Ejercicios/CatalogoEjercicios'
+import HistorialSesiones from '../pages/Historial/HistorialSesiones'
 import Alerta from '../pages/GestionarAlerta/Alerta'
 import AlertaUsuario from '../pages/GestionarAlerta/AlertaUsuario'
 import LoginPage from '../pages/Login/LoginPage'
@@ -157,6 +159,8 @@ export default function AppRoutes() {
           {/* Rutas principales */}
           <Route path="/home" element={<Home />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/catalogo-ejercicios" element={<CatalogoEjercicios />} />
+          <Route path="/historial-sesiones" element={<HistorialSesiones />} />
           <Route path="/planes" element={<Planes />} />
           <Route path="/planes/pago" element={<Pago />} />
           <Route path="/pose-test" element={<PoseTest />} />

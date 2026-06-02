@@ -4,7 +4,28 @@ from typing import Any
 
 from rest_framework import serializers
 
-from .models import Alertas, Usuario
+from .models import Alertas, Usuario, PerfilClinico
+
+
+class PerfilClinicoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PerfilClinico
+        fields = [
+            "id",
+            "objetivo_principal",
+            "experiencia_deporte",
+            "dias_entrenamiento",
+            "tiene_dolor_lumbar",
+            "tiene_lesion_menisco",
+            "tiene_dolor_cervical",
+            "tiene_lesion_hombro",
+            "tiene_tendinitis",
+            "otras_lesiones",
+            "observaciones",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["id", "creado_en", "actualizado_en"]
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
