@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Dumbbell, Activity, ShieldCheck, HelpCircle, Terminal, Eye, Sparkles, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import api from '../api/api'
+import api from '../../api/api'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
