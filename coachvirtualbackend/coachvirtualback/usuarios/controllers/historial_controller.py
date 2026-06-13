@@ -82,3 +82,63 @@ class HistorialPaginadoView(APIView):
                 "repeticiones_totales": repeticiones_totales,
             }
         })
+
+    def post(self, request: Request) -> Response:
+        """Guarda uno o varios ejercicios completados en el historial."""
+        user = request.user
+        data = request.data
+
+        # Si viene un listado, se crea en lote (bulk create)
+        if isinstance(data, list):
+            items_to_create = []
+            for item in data:
+                nombre = item.get("nombre_ejercicio")
+                if nombre:
+                    items_to_create.append(HistorialEntrenamiento(
+                        usuario=user,
+                        nombre_ejercicio=nombre,
+                        repeticiones=int(item.get("repeticiones", 0)),
+                        tiempo_segundos=float(item.get("tiempo_segundos", 0.0)),
+                        precision_porcentaje=float(item.get("precision_porcentaje", 100.0)),
+                        completado=item.get("completado", True)
+                    ))
+            
+            if items_to_create:
+                created = HistorialEntrenamiento.objects.bulk_create(items_to_create)
+                # Verifica logros y metas
+                from ..services.notification_engine import NotificationEngine
+                engine = NotificationEngine(user)
+                engine.check_weekly_goal_reached()
+                total_routines = HistorialEntrenamiento.objects.filter(usuario=user, completado=True).count()
+                engine.check_progress_milestone(total_routines)
+
+                return Response({"detail": f"Se crearon {len(created)} registros exitosamente."}, status=status.HTTP_201_CREATED)
+            return Response({"detail": "No se enviaron registros validos."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Si es un solo registro
+        else:
+            nombre = data.get("nombre_ejercicio")
+            if not nombre:
+                return Response({"detail": "El nombre del ejercicio es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            h = HistorialEntrenamiento.objects.create(
+                usuario=user,
+                nombre_ejercicio=nombre,
+                repeticiones=int(data.get("repeticiones", 0)),
+                tiempo_segundos=float(data.get("tiempo_segundos", 0.0)),
+                precision_porcentaje=float(data.get("precision_porcentaje", 100.0)),
+                completado=data.get("completado", True)
+            )
+            
+            # Verifica logros y metas
+            from ..services.notification_engine import NotificationEngine
+            engine = NotificationEngine(user)
+            engine.check_weekly_goal_reached()
+            total_routines = HistorialEntrenamiento.objects.filter(usuario=user, completado=True).count()
+            engine.check_progress_milestone(total_routines)
+
+            return Response({
+                "id": h.id,
+                "nombre_ejercicio": h.nombre_ejercicio,
+                "completado": h.completado
+            }, status=status.HTTP_201_CREATED)

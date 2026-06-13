@@ -49,6 +49,10 @@ const Home = () => {
   const [rutinas, setRutinas] = useState([])
   const [loadingRutinas, setLoadingRutinas] = useState(true)
 
+  // Estados de recomendación de IA y Gamificación (Logros)
+  const [recomendacion, setRecomendacion] = useState(null)
+  const [logros, setLogros] = useState(null)
+
   // Estado para modal de creación manual
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [availableExercises, setAvailableExercises] = useState([])
@@ -122,12 +126,14 @@ const Home = () => {
     ;(async () => {
       try {
         setLoadingRutinas(true)
-        const [data, dashboardData] = await Promise.all([
+        const [data, dashboardData, recomendacionRes, logrosRes] = await Promise.all([
           rutinaService.list(),
           dashboardService.getStats().catch(err => {
             console.error('Error cargando stats de dashboard:', err);
             return null;
-          })
+          }),
+          api.get('/usuarios/recomendacion-dia/').catch(() => null),
+          api.get('/usuarios/logros/').catch(() => null)
         ])
         
         if (dashboardData) {
@@ -135,6 +141,14 @@ const Home = () => {
           if (dashboardData.datosGrafica) setDatosGrafica(dashboardData.datosGrafica)
           if (dashboardData.erroresFrecuentes) setErroresFrecuentes(dashboardData.erroresFrecuentes)
           if (dashboardData.ultimosEntrenamientos) setUltimosEntrenamientos(dashboardData.ultimosEntrenamientos)
+        }
+
+        if (recomendacionRes && recomendacionRes.data) {
+          setRecomendacion(recomendacionRes.data)
+        }
+
+        if (logrosRes && logrosRes.data) {
+          setLogros(logrosRes.data)
         }
 
         if (Array.isArray(data) && data.length > 0) {
@@ -160,6 +174,31 @@ const Home = () => {
   }, [showNotification])
 
   const handleExplorarEjercicios = () => navigate('/catalogo-ejercicios')
+
+  const handleIniciarRecomendacion = () => {
+    if (!recomendacion) return
+    showNotification('Iniciando recomendación inteligente del día...', 'info')
+    
+    // Genera el objeto de rutina para pasar al workout flow
+    const id = 'recomendacion-ia'
+    const routinePayload = {
+      id,
+      nombre: recomendacion.nombre,
+      categoria: recomendacion.categoria.toUpperCase(),
+      duracion: `${recomendacion.duracion} MIN`,
+      ejercicios: recomendacion.ejercicios.map((ej) => ({
+        id: ej.id,
+        ejercicio_id: ej.id,
+        nombre: ej.nombre,
+        url: ej.url,
+        series: recomendacion.series, // HU-7: dificultad dinámica
+        repeticiones: ej.repeticiones,
+        descanso: ej.descanso
+      }))
+    }
+    
+    navigate(`/rutina/${id}/workout`, { state: { routine: routinePayload } })
+  }
 
   const openCreateModal = async () => {
     setShowCreateModal(true)
@@ -438,6 +477,113 @@ const Home = () => {
                 <span className="text-[10px] font-mono tracking-widest text-white/20 uppercase">
                   AÚN NO HAY SESIONES REGISTRADAS. INICIE SU REHABILITACIÓN O ENTRENAMIENTO.
                 </span>
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Módulo de Recomendaciones y Logros (Gamificación) (HU-6, HU-7, HU-9) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Tarjeta de Recomendación de IA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#0f0f0f] border border-white/5 p-6 flex flex-col justify-between relative overflow-hidden group"
+          >
+            <div className="absolute -right-4 -bottom-4 opacity-5 pointer-events-none">
+              <Sparkles className="w-48 h-48 text-yellow-400" />
+            </div>
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">RECOMENDACIÓN DEL DÍA</h3>
+              </div>
+              {recomendacion ? (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-black italic uppercase text-white tracking-tight">{recomendacion.nombre}</h4>
+                    <p className="text-[10px] font-mono text-white/40 mt-1 uppercase leading-snug">{recomendacion.descripcion}</p>
+                  </div>
+                  <div className="border border-white/5 bg-white/[0.01] p-3 space-y-2 font-mono text-[9px] text-white/60 uppercase">
+                    <div className="flex justify-between border-b border-white/5 pb-1 gap-2">
+                      <span>DIFICULTAD:</span>
+                      <span className="text-yellow-400 font-bold text-right truncate">{recomendacion.motivo_dificultad}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-white/5 pb-1">
+                      <span>DURACIÓN EST.:</span>
+                      <span>{recomendacion.duracion} MINUTOS</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>EJERCICIOS:</span>
+                      <span>{recomendacion.ejercicios?.length} UNIDADES</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-1 pl-2">
+                    {recomendacion.ejercicios?.map((ej, idx) => (
+                      <li key={idx} className="text-[10px] font-mono text-white/50 uppercase truncate">
+                        • {ej.nombre} ({recomendacion.series}x{ej.repeticiones})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-[10px] font-mono text-white/30 uppercase">Generando recomendación adaptada a tu perfil...</p>
+              )}
+            </div>
+            <button
+              onClick={handleIniciarRecomendacion}
+              disabled={!recomendacion}
+              className="w-full bg-yellow-400 text-black py-4 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 relative z-10"
+            >
+              INICIAR ENTRENAMIENTO IA
+            </button>
+          </motion.div>
+
+          {/* Tarjeta de Gamificación (Medallas) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2 bg-[#0d0d0d] border border-white/5 p-6 space-y-6"
+          >
+            <div className="flex items-center justify-between border-b border-white/5 pb-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">LOGROS Y MEDALLAS DE OPERATIVIDAD</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔥</span>
+                <span className="font-mono text-xs text-white/60 uppercase">RACHA ACTIVA: <strong className="text-yellow-400 font-black">{logros?.racha || 0} DÍAS</strong></span>
+              </div>
+            </div>
+
+            {logros && logros.medallas ? (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {logros.medallas.map((med, idx) => (
+                  <div
+                    key={idx}
+                    className={cx(
+                      'border p-3 flex flex-col items-center text-center justify-between gap-3 relative transition-all group rounded-none',
+                      med.desbloqueado
+                        ? 'bg-yellow-400/5 border-yellow-400/30 hover:border-yellow-400'
+                        : 'bg-white/[0.01] border-white/5 opacity-40 hover:opacity-60'
+                    )}
+                    title={med.descripcion}
+                  >
+                    <span className="text-3xl filter drop-shadow-[0_0_5px_rgba(250,204,21,0.2)] select-none">
+                      {med.icono}
+                    </span>
+                    <div className="space-y-1">
+                      <p className={cx('text-[9px] font-black uppercase tracking-tighter truncate w-full', med.desbloqueado ? 'text-yellow-400' : 'text-white/60')}>{med.titulo}</p>
+                      <p className="text-[7px] font-mono text-white/30 uppercase tracking-widest leading-none">
+                        {med.desbloqueado ? 'DESBLOQUEADO' : `${med.progreso}/${med.meta}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-28 text-[10px] font-mono tracking-widest text-white/20 uppercase">
+                Cargando logros de entrenamiento del atleta...
               </div>
             )}
           </motion.div>

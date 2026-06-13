@@ -223,6 +223,48 @@ class NotificationEngine:
 
         return None
 
+    def check_weekly_goal_reached(self) -> Alertas | None:
+        """Verifica si el usuario alcanzo su meta de entrenamientos semanales."""
+        from django.utils import timezone
+        from datetime import timedelta
+        from ..models import HistorialEntrenamiento
+
+        hoy = timezone.now()
+        # Lunes de esta semana (00:00:00)
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        inicio_semana = inicio_semana.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Meta semanal (default a 3 si no tiene perfil clinico)
+        dias_objetivo = 3
+        try:
+            perfil = self.user.perfil_clinico
+            if perfil.dias_entrenamiento:
+                dias_objetivo = perfil.dias_entrenamiento
+        except Exception:
+            pass
+
+        # Cuenta de entrenamientos completados esta semana
+        entrenamientos_semana = HistorialEntrenamiento.objects.filter(
+            usuario=self.user,
+            fecha__gte=inicio_semana,
+            completado=True
+        ).count()
+
+        # Alerta si alcanzo la meta y no se le notifico esta semana
+        if entrenamientos_semana >= dias_objetivo:
+            mensaje = f"🏆 ¡Felicidades! Alcanzaste tu objetivo semanal de {dias_objetivo} entrenamientos. ¡Consistencia pura! 🎉"
+            
+            # Evita duplicados de la misma alerta en la semana actual
+            already_sent = Alertas.objects.filter(
+                usuario=self.user,
+                mensaje=mensaje,
+                created_at__gte=inicio_semana
+            ).exists()
+
+            if not already_sent:
+                return self._create_alert(mensaje, tipo="achievement")
+        return None
+
     def run_all_checks(self) -> dict[str, Any]:
         """Ejecuta todas las verificaciones de notificaciones."""
         results = {
@@ -244,6 +286,11 @@ class NotificationEngine:
         inactivity = self.check_inactivity()
         if inactivity:
             results["alerts_created"].append(inactivity.mensaje)
+
+        # 4. Meta semanal (HU-10)
+        weekly = self.check_weekly_goal_reached()
+        if weekly:
+            results["alerts_created"].append(weekly.mensaje)
 
         results["total"] = len(results["alerts_created"])
         return results

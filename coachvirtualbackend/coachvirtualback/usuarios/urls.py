@@ -23,11 +23,15 @@ from .controllers.usuario_controller import (
 from .controllers.dashboard_controller import DashboardStatsView
 from .controllers.perfil_clinico_controller import PerfilClinicoView
 from .controllers.historial_controller import HistorialPaginadoView
+from .controllers.recomendacion_controller import RecomendacionView
+from .controllers.gamificacion_controller import LogrosView
 
 urlpatterns = [
     # Perfil Clínico y Historial Paginado (HUs)
     path("usuarios/perfil-clinico/", PerfilClinicoView.as_view(), name="perfil-clinico"),
     path("usuarios/historial-paginado/", HistorialPaginadoView.as_view(), name="historial-paginado"),
+    path("usuarios/recomendacion-dia/", RecomendacionView.as_view(), name="recomendacion-dia"),
+    path("usuarios/logros/", LogrosView.as_view(), name="usuarios-logros"),
 
     # Usuario
     path("usuarios/me/", MeView.as_view(), name="me"),

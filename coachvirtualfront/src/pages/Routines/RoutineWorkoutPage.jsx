@@ -48,7 +48,8 @@ import {
   getExerciseDescription,
   generateExerciseExplanation,
 } from '../../services/IA/exerciseDescriptions'
-import { getEjercicioById } from '../../services/IA/ejerciciosDataset'
+import { getEjercicioById, EJERCICIOS } from '../../services/IA/ejerciciosDataset'
+import api from '../../api/api'
 import { createRepCounter } from '../../services/IA/exerciseRepCounter'
 import {
   initVoiceRecognition,
@@ -93,6 +94,10 @@ export default function RoutineWorkoutPage() {
   const [showVoiceCommandsModal, setShowVoiceCommandsModal] = useState(false)
   const [showUpgradeAd, setShowUpgradeAd] = useState(false)
   const [adCountdown, setAdCountdown] = useState(30)
+
+  // Estados para variantes de ejercicios por dolor (HU-8)
+  const [showSwapModal, setShowSwapModal] = useState(false)
+  const [swapVariants, setSwapVariants] = useState([])
 
   const restIntervalRef = useRef(null)
   const timerIntervalRef = useRef(null)
@@ -282,10 +287,34 @@ export default function RoutineWorkoutPage() {
       setSetCount(1)
       setWorkoutState(WORKOUT_STATES.INTRO)
     } else {
+      // Guarda el progreso en el backend (Lote de ejercicios)
+      ;(async () => {
+        try {
+          const payload = exercises.map((ex) => ({
+            nombre_ejercicio: ex.nombre,
+            repeticiones: ex.targetReps,
+            tiempo_segundos: ex.targetTime || 45,
+            precision_porcentaje: 95.0, // Simulación de precisión de ejecución
+            completado: true
+          }))
+          
+          // Guarda los ejercicios en el historial
+          await api.post('/usuarios/historial-paginado/', payload)
+          
+          // Genera alerta de rutina completada
+          await api.post('/alertas/routine-complete/', {
+            routine_name: routineData?.nombre || 'Rutina',
+            duration_minutes: routineData?.duracion_minutos || 45
+          })
+        } catch (err) {
+          console.error('Error guardando sesion de entrenamiento:', err)
+        }
+      })()
+
       setWorkoutState(WORKOUT_STATES.COMPLETED)
       showNotification('ENTRENAMIENTO_FINALIZADO_CON_ÉXITO', 'success')
     }
-  }, [currentExerciseIndex, exercises.length])
+  }, [currentExerciseIndex, exercises, routineData, showNotification])
 
   const goToPrevExercise = useCallback(() => {
     if (currentExerciseIndex > 0) {
@@ -340,8 +369,56 @@ export default function RoutineWorkoutPage() {
         setHoldTime(0)
       }
     },
-    [currentExercise, workoutState, isPaused, handleRepComplete, handleSetComplete, voiceEnabled]
-  )
+    [currentExercise, workoutState, isPaused, handleRepComplete, handleSetComplete, voiceEnabled])
+
+  const handleReportDiscomfort = () => {
+    if (!currentExercise) return
+    
+    // Busca variantes del mismo grupo muscular y tipo, excluyendo el actual (HU-8)
+    const musculoActual = currentExercise.musculo || ''
+    const tipoActual = currentExercise.tipo || ''
+    
+    const variantes = EJERCICIOS.filter((ej) => 
+      ej.musculo === musculoActual && 
+      ej.tipo === tipoActual && 
+      ej.id !== (currentExercise.ejercicio_id || currentExercise.id)
+    )
+    
+    setSwapVariants(variantes)
+    setShowSwapModal(true)
+  }
+
+  const handleSwapExercise = (nuevaVariante) => {
+    const nuevosEjercicios = [...exercises]
+    
+    // Reemplaza el ejercicio en el indice actual conservando reps, series y descanso
+    nuevosEjercicios[currentExerciseIndex] = {
+      ...nuevosEjercicios[currentExerciseIndex],
+      ...nuevaVariante,
+      id: nuevaVariante.id,
+      ejercicio_id: nuevaVariante.id,
+      nombre: nuevaVariante.nombre,
+      url: nuevaVariante.url,
+      musculo: nuevaVariante.musculo,
+      tipo: nuevaVariante.tipo
+    }
+    
+    setExercises(nuevosEjercicios)
+    setShowSwapModal(false)
+    
+    // Reinicia contadores de repeticiones y series
+    setRepCount(0)
+    setSetCount(1)
+    
+    showNotification(`CAMBIADO A: ${nuevaVariante.nombre.toUpperCase()}`, 'success')
+    
+    if (voiceEnabled) {
+      speak(`Entendido. Cambiamos el ejercicio a ${nuevaVariante.nombre}. Evita cualquier dolor.`, 'info', true)
+    }
+    
+    // Vuelve a reproducir la explicacion del nuevo ejercicio
+    setWorkoutState(WORKOUT_STATES.INTRO)
+  }
 
   if (!routineData)
     return (
@@ -609,6 +686,17 @@ export default function RoutineWorkoutPage() {
                   {currentExercise?.instrucciones || 'PROCESANDO_INSTRUCCIONES_SISTEMA...'}
                 </p>
               </div>
+
+              {/* Botón para reportar molestias y cambiar por variante (HU-8) */}
+              <div className="pt-6 border-t border-white/5">
+                <button
+                  onClick={handleReportDiscomfort}
+                  className="w-full flex items-center justify-center gap-2 border border-red-500/20 hover:border-red-500/50 bg-red-500/5 hover:bg-red-500/10 py-4 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all font-mono"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  REPORTAR MOLESTIA / VARIAR EJERCICIO
+                </button>
+              </div>
             </div>
 
             {/* Errores Comunes */}
@@ -684,6 +772,82 @@ export default function RoutineWorkoutPage() {
                 <span>REFERENCIA</span> <span className="text-white/60">"MOSTRAR"</span>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Cambio de Variantes (HU-8) */}
+      <AnimatePresence>
+        {showSwapModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-[120] flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-[#0f0f0f] border border-white/10 p-8 max-w-md w-full relative"
+            >
+              <button
+                onClick={() => setShowSwapModal(false)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="mb-6 space-y-2">
+                <p className="text-[8px] font-black text-yellow-400 tracking-[0.25em] uppercase font-mono">
+                  BUSCADOR_DE_VARIANTES_EVITACIÓN_DOLOR
+                </p>
+                <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                  ¿Sientes Molestia?
+                </h3>
+                <p className="text-[10px] font-mono text-white/40 leading-relaxed uppercase">
+                  Reemplaza el ejercicio actual por una variante para el grupo muscular:{' '}
+                  <span className="text-yellow-400 font-bold">{currentExercise?.musculo?.toUpperCase()}</span>
+                </p>
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {swapVariants.length === 0 ? (
+                  <div className="text-center py-6 border border-white/5 bg-white/[0.01]">
+                    <p className="text-[9px] font-mono text-red-400 uppercase tracking-widest">
+                      NO_HAY_VARIANTES_DISPONIBLES
+                    </p>
+                  </div>
+                ) : (
+                  swapVariants.map((variante) => (
+                    <button
+                      key={variante.id}
+                      onClick={() => handleSwapExercise(variante)}
+                      className="w-full text-left p-4 bg-white/[0.01] border border-white/5 hover:border-yellow-400/60 hover:bg-white/[0.03] transition-all flex items-center justify-between group font-mono"
+                    >
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className="text-xs font-black uppercase text-white group-hover:text-yellow-400 transition-colors truncate">
+                          {variante.nombre}
+                        </p>
+                        <p className="text-[8px] font-mono text-white/30 uppercase mt-1 truncate">
+                          TIPO: {variante.tipo}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-white/5">
+                <button
+                  onClick={() => setShowSwapModal(false)}
+                  className="w-full border border-white/10 hover:border-white py-4 font-black uppercase tracking-widest text-[9px] text-white/60 hover:text-white transition-all font-mono"
+                >
+                  CANCELAR Y VOLVER AL ENTRENAMIENTO
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
