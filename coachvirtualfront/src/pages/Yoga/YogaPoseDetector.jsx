@@ -7,7 +7,13 @@ import {
   preloadMediaPipe,
 } from '../../services/IA/mediaPipePreloader'
 
-export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [] }) {
+export default function YogaPoseDetector({
+  onPoseDetected,
+  highlightedAngles = [],
+  isCalibrated = false,
+  onCalibrationComplete,
+  showSkeleton = true,
+}) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const [error, setError] = useState(null)
@@ -20,6 +26,19 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
   const highlightedAnglesRef = useRef(highlightedAngles)
   const smoothedLandmarksRef = useRef(null)
   const isMountedRef = useRef(true)
+
+  // Estados para calibración (HU-11)
+  const [lightStatus, setLightStatus] = useState('OK')
+  const [framingStatus, setFramingStatus] = useState('NO_BODY')
+  const [countdown, setCountdown] = useState(3)
+
+  // Refs de calibración para requestAnimationFrame
+  const lightStatusRef = useRef('OK')
+  const framingStatusRef = useRef('NO_BODY')
+  const frameCountRef = useRef(0)
+  const brightnessCanvasRef = useRef(null)
+  const countdownRef = useRef(3)
+  const calibrationStartTimeRef = useRef(null)
 
   useEffect(() => {
     onPoseDetectedRef.current = onPoseDetected
@@ -64,7 +83,6 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
           throw new Error('Navegador no soporta cámara')
         }
 
-        // Intentar configuración rápida primero
         const configs = [
           { width: 640, height: 480, facingMode: 'user' },
           { facingMode: 'user' },
@@ -149,7 +167,6 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
       }
     }
 
-    // Ejecutar ambos en PARALELO
     Promise.all([initCamera(), initModel()])
 
     return () => {
@@ -188,29 +205,106 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
               z: l.z,
               visibility: l.visibility,
             }))
+
+            // ===== HU-11: Calibración en tiempo real =====
+            // 1. Evaluar brillo (Iluminación)
+            if (frameCountRef.current % 15 === 0) {
+              if (!brightnessCanvasRef.current) {
+                brightnessCanvasRef.current = document.createElement('canvas')
+                brightnessCanvasRef.current.width = 40
+                brightnessCanvasRef.current.height = 30
+              }
+              const bCtx = brightnessCanvasRef.current.getContext('2d')
+              bCtx.drawImage(video, 0, 0, 40, 30)
+              const imgData = bCtx.getImageData(0, 0, 40, 30)
+              const data = imgData.data
+              let colorSum = 0
+              for (let i = 0; i < data.length; i += 4) {
+                colorSum += (data[i] + data[i + 1] + data[i + 2]) / 3
+              }
+              const brightnessVal = Math.floor(colorSum / (40 * 30))
+              const statusVal = brightnessVal < 60 ? 'LOW' : brightnessVal > 220 ? 'HIGH' : 'OK'
+              lightStatusRef.current = statusVal
+              setLightStatus(statusVal)
+            }
+            frameCountRef.current++
+
+            // 2. Evaluar encuadre (Hombros y Caderas son esenciales)
+            const shouldersVisible = (landmarks[11]?.visibility > 0.55) && (landmarks[12]?.visibility > 0.55)
+            const hipsVisible = (landmarks[23]?.visibility > 0.55) && (landmarks[24]?.visibility > 0.55)
+            const kneesVisible = (landmarks[25]?.visibility > 0.55) && (landmarks[26]?.visibility > 0.55)
+            const anklesVisible = (landmarks[27]?.visibility > 0.55) && (landmarks[28]?.visibility > 0.55)
+
+            let framingVal = 'NO_BODY'
+            if (shouldersVisible && hipsVisible) {
+              if (kneesVisible && anklesVisible) {
+                framingVal = 'FULL'
+              } else {
+                framingVal = 'UPPER'
+              }
+            }
+            framingStatusRef.current = framingVal
+            setFramingStatus(framingVal)
+
+            // 3. Evaluar cuenta regresiva de calibración
+            const isLightOK = lightStatusRef.current === 'OK'
+            const isFramingOK = framingStatusRef.current !== 'NO_BODY'
+
+            if (isLightOK && isFramingOK) {
+              if (!calibrationStartTimeRef.current) {
+                calibrationStartTimeRef.current = Date.now()
+                countdownRef.current = 3
+                setCountdown(3)
+              } else {
+                const elapsed = (Date.now() - calibrationStartTimeRef.current) / 1000
+                const remaining = Math.max(0, Math.ceil(3 - elapsed))
+                if (remaining !== countdownRef.current) {
+                  countdownRef.current = remaining
+                  setCountdown(remaining)
+                }
+                if (elapsed >= 3 && !isCalibrated) {
+                  onCalibrationComplete?.()
+                }
+              }
+            } else {
+              calibrationStartTimeRef.current = null
+              if (countdownRef.current !== 3) {
+                countdownRef.current = 3
+                setCountdown(3)
+              }
+            }
+
+            // ===== HU-12: Mapeo de esqueleto interactivo =====
             const highlighted = highlightedAnglesRef.current || []
 
-            // Dibujar conexiones
-            const drawLine = (p1, p2, color = '#00FF00') => {
-              if (!p1 || !p2) return
+            // Función para dibujar líneas con brillo de neón
+            const drawLine = (p1, p2, color = '#00FF88') => {
+              if (!showSkeleton || !p1 || !p2) return
               ctx.beginPath()
               ctx.moveTo(p1.x, p1.y)
               ctx.lineTo(p2.x, p2.y)
               ctx.strokeStyle = color
               ctx.lineWidth = 6
               ctx.lineCap = 'round'
+              
+              // Efecto de neón
+              ctx.shadowColor = color
+              ctx.shadowBlur = 10
               ctx.stroke()
+              ctx.shadowBlur = 0 // reset
             }
 
             const drawConnection = (indices, isValid = null) => {
-              const color = isValid === null ? '#00FF00' : isValid ? 'green' : 'red'
+              const color = isValid === null ? '#00FF88' : isValid ? '#00FF88' : '#FF3366'
               for (let i = 0; i < indices.length - 1; i++) {
                 drawLine(points[indices[i]], points[indices[i + 1]], color)
               }
             }
 
+            // Si hay ángulos resaltados por el contador de ejercicio
             highlighted.forEach(({ indices, isValid }) => drawConnection(indices, isValid))
 
+            // Si no hay específicos, dibujar el esqueleto genérico
             if (highlighted.length === 0) {
               ;[
                 [11, 13, 15],
@@ -224,38 +318,42 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
               ].forEach((c) => drawConnection(c))
             }
 
-            // Dibujar puntos
-            ;[11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach((idx) => {
-              if (points[idx] && landmarks[idx].visibility > 0.5) {
-                ctx.beginPath()
-                ctx.arc(points[idx].x, points[idx].y, 6, 0, Math.PI * 2)
-                ctx.fillStyle = '#AAFF00'
-                ctx.fill()
-                ctx.strokeStyle = '#000'
-                ctx.lineWidth = 2
-                ctx.stroke()
-              }
-            })
-
-            // Dibujar ángulos
-            highlighted.forEach(({ indices, angle, isValid }) => {
-              if (angle !== undefined && indices.length >= 3) {
-                const mp = points[indices[1]]
-                if (mp && landmarks[indices[1]].visibility > 0.5) {
-                  ctx.font = 'bold 24px Arial'
-                  ctx.fillStyle = isValid ? '#00FF00' : '#FF0000'
+            // Dibujar articulaciones
+            if (showSkeleton) {
+              ;[11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach((idx) => {
+                if (points[idx] && landmarks[idx].visibility > 0.5) {
+                  ctx.beginPath()
+                  ctx.arc(points[idx].x, points[idx].y, 6, 0, Math.PI * 2)
+                  ctx.fillStyle = '#AAFF00'
+                  ctx.fill()
                   ctx.strokeStyle = '#000'
-                  ctx.lineWidth = 3
-                  ctx.strokeText(`${Math.round(angle)}°`, mp.x + 10, mp.y + 30)
-                  ctx.fillText(`${Math.round(angle)}°`, mp.x + 10, mp.y + 30)
+                  ctx.lineWidth = 2
+                  ctx.stroke()
                 }
-              }
-            })
+              })
+            }
+
+            // Dibujar textos de ángulos
+            if (showSkeleton) {
+              highlighted.forEach(({ indices, angle, isValid }) => {
+                if (angle !== undefined && indices.length >= 3) {
+                  const mp = points[indices[1]]
+                  if (mp && landmarks[indices[1]].visibility > 0.5) {
+                    ctx.font = 'bold 24px monospace'
+                    ctx.fillStyle = isValid ? '#00FF88' : '#FF3366'
+                    ctx.strokeStyle = '#000'
+                    ctx.lineWidth = 4
+                    ctx.strokeText(`${Math.round(angle)}°`, mp.x + 12, mp.y + 12)
+                    ctx.fillText(`${Math.round(angle)}°`, mp.x + 12, mp.y + 12)
+                  }
+                }
+              })
+            }
 
             onPoseDetectedRef.current?.(results.landmarks[0])
           }
         } catch (e) {
-          // Silenciar errores de detección
+          // Silenciar
         }
       }
 
@@ -266,13 +364,13 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [cameraReady, modelReady, smoothLandmarks])
+  }, [cameraReady, modelReady, smoothLandmarks, isCalibrated, showSkeleton])
 
   // ERROR
   if (error) {
     return (
       <div className="flex items-center justify-center p-6 bg-red-900/50 rounded-xl min-h-[350px]">
-        <div className="text-center">
+        <div className="text-center font-mono">
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-3" />
           <p className="text-white font-semibold mb-2">Error</p>
           <p className="text-red-200 text-sm mb-4">{error}</p>
@@ -297,7 +395,7 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
       }}
     >
       {/* Indicador de estado */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2 font-mono">
         {cameraReady && modelReady ? (
           <div className="flex items-center gap-1.5 bg-green-600/90 text-white text-xs px-2.5 py-1 rounded-full">
             <Zap className="w-3.5 h-3.5" />
@@ -310,6 +408,66 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
           </div>
         )}
       </div>
+
+      {/* HU-11: Overlay de Calibración Inicial */}
+      {!isCalibrated && (
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-6">
+          <div className="border-l-4 border-yellow-400 pl-4 py-1 text-left font-mono">
+            <p className="text-[9px] font-black text-yellow-400 tracking-[0.25em] uppercase">
+              CALIBRACIÓN_OBLIGATORIA
+            </p>
+            <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
+              Ajuste de Luz y Encuadre
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 w-full max-w-sm font-mono">
+            {/* Iluminación */}
+            <div className={`p-4 border text-left ${lightStatus === 'OK' ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full ${lightStatus === 'OK' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
+                <span className="text-[8px] font-black text-white/50 tracking-wider">ILUMINACIÓN</span>
+              </div>
+              <p className={`text-xs font-black uppercase ${lightStatus === 'OK' ? 'text-green-400' : 'text-red-400'}`}>
+                {lightStatus === 'OK' ? 'ÓPTIMA' : lightStatus === 'LOW' ? 'BAJA' : 'EXCESIVA'}
+              </p>
+              <p className="text-[7px] text-white/40 uppercase mt-1">
+                {lightStatus === 'OK' ? 'Luz ambiente correcta' : 'Enciende una luz o acércate'}
+              </p>
+            </div>
+
+            {/* Encuadre */}
+            <div className={`p-4 border text-left ${framingStatus !== 'NO_BODY' ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full ${framingStatus !== 'NO_BODY' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
+                <span className="text-[8px] font-black text-white/50 tracking-wider">ENCUADRE_CUERPO</span>
+              </div>
+              <p className={`text-xs font-black uppercase ${framingStatus !== 'NO_BODY' ? 'text-green-400' : 'text-red-400'}`}>
+                {framingStatus === 'FULL' ? 'CUERPO COMPLETO' : framingStatus === 'UPPER' ? 'CUERPO PARCIAL' : 'SIN CUERPO'}
+              </p>
+              <p className="text-[7px] text-white/40 uppercase mt-1">
+                {framingStatus !== 'NO_BODY' ? 'Encuadre detectado' : 'Ubícate frente a la cámara'}
+              </p>
+            </div>
+          </div>
+
+          {lightStatus === 'OK' && framingStatus !== 'NO_BODY' ? (
+            <div className="space-y-2 animate-bounce font-mono">
+              <p className="text-4xl font-black text-yellow-400 italic">
+                {countdown > 0 ? countdown : 'LISTO'}
+              </p>
+              <p className="text-[9px] text-white/50 tracking-widest uppercase">
+                MANTÉN LA POSICIÓN PARA FINALIZAR CALIBRACIÓN
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-[9px] font-mono text-white/30 uppercase tracking-widest">
+              <Camera className="w-3.5 h-3.5 animate-pulse" />
+              Esperando condiciones óptimas del entorno...
+            </div>
+          )}
+        </div>
+      )}
 
       <video
         ref={videoRef}
@@ -334,3 +492,4 @@ export default function YogaPoseDetector({ onPoseDetected, highlightedAngles = [
     </div>
   )
 }
+

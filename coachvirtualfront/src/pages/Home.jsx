@@ -74,6 +74,7 @@ const Home = () => {
   })
   
   const [erroresFrecuentes, setErroresFrecuentes] = useState([])
+  const [erroresRecientes, setErroresRecientes] = useState([]) // HU-14
   const [ultimosEntrenamientos, setUltimosEntrenamientos] = useState([])
 
   const [datosGrafica, setDatosGrafica] = useState([
@@ -140,6 +141,7 @@ const Home = () => {
           if (dashboardData.estadisticas) setEstadisticas(dashboardData.estadisticas)
           if (dashboardData.datosGrafica) setDatosGrafica(dashboardData.datosGrafica)
           if (dashboardData.erroresFrecuentes) setErroresFrecuentes(dashboardData.erroresFrecuentes)
+          if (dashboardData.erroresRecientes) setErroresRecientes(dashboardData.erroresRecientes)
           if (dashboardData.ultimosEntrenamientos) setUltimosEntrenamientos(dashboardData.ultimosEntrenamientos)
         }
 
@@ -445,12 +447,12 @@ const Home = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2 bg-[#0d0d0d] border border-white/5 p-6"
+            className="bg-[#0d0d0d] border border-white/5 p-6"
           >
             <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
               <div className="flex items-center gap-3">
                 <Database className="w-5 h-5 text-white/40" />
-                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">HISTORIAL DE SESIONES Y TERAPIAS</h3>
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">HISTORIAL DE SESIONES</h3>
               </div>
             </div>
             {ultimosEntrenamientos.length > 0 ? (
@@ -474,11 +476,48 @@ const Home = () => {
             ) : (
               <div className="flex flex-col items-center justify-center h-32 space-y-3">
                 <Activity className="w-6 h-6 text-white/10" />
-                <span className="text-[10px] font-mono tracking-widest text-white/20 uppercase">
-                  AÚN NO HAY SESIONES REGISTRADAS. INICIE SU REHABILITACIÓN O ENTRENAMIENTO.
+                <span className="text-[10px] font-mono tracking-widest text-white/20 uppercase text-center">
+                  AÚN NO HAY SESIONES REGISTRADAS.
                 </span>
               </div>
             )}
+          </motion.div>
+
+          {/* Postural Incidences (HU-14) */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-[#0f0f0f] border border-white/5 p-6 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                <Activity className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">INCIDENCIAS POSTURALES (IA)</h3>
+              </div>
+              {erroresRecientes.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2 font-mono text-[9px] uppercase">
+                  {erroresRecientes.map((err, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-white/[0.01] border border-white/5">
+                      <div>
+                        <p className="text-white/80 font-black truncate max-w-[100px]">{err.ejercicio}</p>
+                        <p className="text-white/30 text-[7px]">{err.fecha}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-red-400 font-bold truncate max-w-[100px]">{err.error}</p>
+                        <p className="text-yellow-400 font-black">REP #{err.repeticion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-32 space-y-2">
+                  <span className="text-2xl">⚡</span>
+                  <span className="text-[9px] font-mono tracking-widest text-white/20 uppercase text-center">
+                    SIN ERRORES POSTURALES REGISTRADOS
+                  </span>
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
 

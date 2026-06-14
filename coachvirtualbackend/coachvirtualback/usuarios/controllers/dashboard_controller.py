@@ -33,6 +33,15 @@ class DashboardStatsView(APIView):
         errores_freq = errores_qs.values('tipo_error').annotate(total=Sum('cantidad')).order_by('-total')[:3]
         errores_lista = [{"error": e['tipo_error'], "cantidad": e['total']} for e in errores_freq]
 
+        # Errores recientes con repetición (HU-14)
+        errores_recientes_qs = ErrorPostural.objects.filter(usuario=user).order_by('-fecha')[:10]
+        errores_recientes = [{
+            "ejercicio": e.historial.nombre_ejercicio,
+            "error": e.tipo_error,
+            "repeticion": e.repeticion,
+            "fecha": e.fecha.strftime("%Y-%m-%d %H:%M")
+        } for e in errores_recientes_qs]
+
         # 2. Datos para la gráfica (Últimos 7 días)
         # Inicializamos los últimos 7 días con 0
         datos_grafica = []
@@ -91,6 +100,7 @@ class DashboardStatsView(APIView):
                 "precisionPromedio": round(precision, 1)
             },
             "erroresFrecuentes": errores_lista,
+            "erroresRecientes": errores_recientes,
             "datosGrafica": datos_grafica,
             "ultimosEntrenamientos": ultimos_entrenamientos
         })

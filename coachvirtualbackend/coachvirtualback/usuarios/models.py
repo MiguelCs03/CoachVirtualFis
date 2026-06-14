@@ -208,9 +208,10 @@ class ErrorPostural(models.Model):
     
     tipo_error = models.CharField(max_length=150, help_text="Ej: 'Caderas no estables', 'Rodillas dobladas', 'Codos < 90 grados'")
     cantidad = models.IntegerField(default=1, help_text="Número de veces que ocurrió el error en la sesión")
+    repeticion = models.IntegerField(default=0, help_text="Número de repetición en que ocurrió el error") # HU-14
 
     def __str__(self):
-        return f"Error: {self.tipo_error} - {self.historial.nombre_ejercicio}"
+        return f"Error: {self.tipo_error} - {self.historial.nombre_ejercicio} (Rep {self.repeticion})"
 
 
 class PerfilClinico(models.Model):

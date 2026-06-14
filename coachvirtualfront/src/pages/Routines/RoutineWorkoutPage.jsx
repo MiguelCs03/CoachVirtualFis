@@ -34,6 +34,8 @@ import {
   ChevronRight,
   X,
   Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import YogaPoseDetector from '../Yoga/YogaPoseDetector'
 import VoiceFeedbackOverlay from '../../components/ui/VoiceFeedbackOverlay'
@@ -99,6 +101,15 @@ export default function RoutineWorkoutPage() {
   const [showSwapModal, setShowSwapModal] = useState(false)
   const [swapVariants, setSwapVariants] = useState([])
 
+  // Estados para calibración y mapeo (HU-11, HU-12)
+  const [isCalibrated, setIsCalibrated] = useState(false)
+  const [showSkeleton, setShowSkeleton] = useState(true)
+  const [highlightedAngles, setHighlightedAngles] = useState([])
+
+  // Estados para incidencias posturales por repetición (HU-14)
+  const [currentExerciseErrors, setCurrentExerciseErrors] = useState([])
+  const [sessionErrors, setSessionErrors] = useState({})
+
   const restIntervalRef = useRef(null)
   const timerIntervalRef = useRef(null)
   const lastRepTimeRef = useRef(0)
@@ -146,7 +157,7 @@ export default function RoutineWorkoutPage() {
   }, [currentExerciseIndex])
 
   useEffect(() => {
-    if (workoutState === WORKOUT_STATES.ACTIVE && !isPaused) {
+    if (workoutState === WORKOUT_STATES.ACTIVE && !isPaused && isCalibrated) {
       const currentEx = exercises[currentExerciseIndex]
       if (currentEx?.esTiempo) {
         timerIntervalRef.current = setInterval(() => {
@@ -161,7 +172,7 @@ export default function RoutineWorkoutPage() {
       }
     }
     return () => clearInterval(timerIntervalRef.current)
-  }, [workoutState, isPaused, currentExerciseIndex, exercises])
+  }, [workoutState, isPaused, currentExerciseIndex, exercises, isCalibrated])
 
   const currentExercise = exercises[currentExerciseIndex] || null
 
@@ -197,6 +208,11 @@ export default function RoutineWorkoutPage() {
     if (currentExercise) {
       repCounterRef.current = createRepCounter(currentExercise.ejercicio_id || currentExercise.id)
       repCounterRef.current.reset()
+      
+      // Resetear calibración e incidencias para el nuevo ejercicio (HU-11)
+      setIsCalibrated(false)
+      setCurrentExerciseErrors([])
+      setHighlightedAngles([])
     }
   }, [currentExercise])
 
@@ -281,6 +297,12 @@ export default function RoutineWorkoutPage() {
   }, [])
 
   const goToNextExercise = useCallback(() => {
+    // Guardar errores del ejercicio actual en la sesión (HU-14)
+    setSessionErrors(prev => ({
+      ...prev,
+      [currentExerciseIndex]: currentExerciseErrors
+    }))
+
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex((prev) => prev + 1)
       setRepCount(0)
@@ -290,13 +312,21 @@ export default function RoutineWorkoutPage() {
       // Guarda el progreso en el backend (Lote de ejercicios)
       ;(async () => {
         try {
-          const payload = exercises.map((ex) => ({
-            nombre_ejercicio: ex.nombre,
-            repeticiones: ex.targetReps,
-            tiempo_segundos: ex.targetTime || 45,
-            precision_porcentaje: 95.0, // Simulación de precisión de ejecución
-            completado: true
-          }))
+          const finalSessionErrors = { ...sessionErrors, [currentExerciseIndex]: currentExerciseErrors }
+
+          const payload = exercises.map((ex, idx) => {
+            const exErrors = finalSessionErrors[idx] || []
+            // Calcular precisión reduciendo un 5% por cada error único (mínimo 50%)
+            const computedPrecision = Math.max(50.0, 100.0 - (exErrors.length * 5.0))
+            return {
+              nombre_ejercicio: ex.nombre,
+              repeticiones: ex.targetReps,
+              tiempo_segundos: ex.targetTime || 45,
+              precision_porcentaje: computedPrecision,
+              completado: true,
+              errores: exErrors
+            }
+          })
           
           // Guarda los ejercicios en el historial
           await api.post('/usuarios/historial-paginado/', payload)
@@ -314,7 +344,7 @@ export default function RoutineWorkoutPage() {
       setWorkoutState(WORKOUT_STATES.COMPLETED)
       showNotification('ENTRENAMIENTO_FINALIZADO_CON_ÉXITO', 'success')
     }
-  }, [currentExerciseIndex, exercises, routineData, showNotification])
+  }, [currentExerciseIndex, exercises, routineData, showNotification, currentExerciseErrors, sessionErrors])
 
   const goToPrevExercise = useCallback(() => {
     if (currentExerciseIndex > 0) {
@@ -331,6 +361,7 @@ export default function RoutineWorkoutPage() {
         !currentExercise ||
         workoutState !== WORKOUT_STATES.ACTIVE ||
         isPaused ||
+        !isCalibrated || // HU-11: no procesar si no está calibrado
         !explanationDoneRef.current ||
         !repCounterRef.current
       )
@@ -340,9 +371,38 @@ export default function RoutineWorkoutPage() {
       const result = repCounterRef.current.processFrame(landmarks)
       setIsCorrect(result.isCorrect)
 
+      // 1. Obtener ángulos para dibujar (HU-12)
+      const counter = repCounterRef.current
+      let activeAngles = []
+      if (counter && counter.config) {
+        const primaryAngleConf = counter.config.detection?.primaryAngle
+        if (primaryAngleConf && result.angle !== undefined) {
+          const jointMap = { shoulder: 11, elbow: 13, wrist: 15, hip: 23, knee: 25, ankle: 27, head: 0 }
+          const indices = primaryAngleConf.joints.map(j => jointMap[j]).filter(idx => idx !== undefined)
+          activeAngles.push({
+            indices: indices,
+            angle: result.angle,
+            isValid: result.isCorrect
+          })
+        }
+      }
+      setHighlightedAngles(activeAngles)
+
+      // 2. Registrar incidencia de error postural por repetición (HU-14)
       if (result.errors && result.errors.length > 0) {
         setCorrections(result.errors)
         const msg = result.errors[0]?.message || result.errors[0]
+        
+        // Registrar error único para la repetición actual
+        const currentRep = repCount + 1
+        setCurrentExerciseErrors(prev => {
+          const alreadyLogged = prev.some(e => e.tipo_error === msg && e.repeticion === currentRep)
+          if (!alreadyLogged) {
+            return [...prev, { tipo_error: msg, repeticion: currentRep }]
+          }
+          return prev
+        })
+
         if (now - lastCorrectionTimeRef.current > 4000 && voiceEnabled && !isSpeakingNow()) {
           speak(msg, 'correction', true)
           lastCorrectionTimeRef.current = now
@@ -369,7 +429,8 @@ export default function RoutineWorkoutPage() {
         setHoldTime(0)
       }
     },
-    [currentExercise, workoutState, isPaused, handleRepComplete, handleSetComplete, voiceEnabled])
+    [currentExercise, workoutState, isPaused, handleRepComplete, handleSetComplete, voiceEnabled, repCount]
+  )
 
   const handleReportDiscomfort = () => {
     if (!currentExercise) return
@@ -432,30 +493,125 @@ export default function RoutineWorkoutPage() {
       </div>
     )
 
-  if (workoutState === WORKOUT_STATES.COMPLETED)
+  if (workoutState === WORKOUT_STATES.COMPLETED) {
+    const totalExercises = exercises.length
+    const finalSessionErrors = { ...sessionErrors, [currentExerciseIndex]: currentExerciseErrors }
+    
+    let precisionSum = 0
+    exercises.forEach((ex, idx) => {
+      const errCount = finalSessionErrors[idx]?.length || 0
+      precisionSum += Math.max(50.0, 100.0 - (errCount * 5.0))
+    })
+    const avgPrecision = totalExercises > 0 ? Math.round(precisionSum / totalExercises) : 100
+    const durationMinutes = routineData?.duracion_minutos || 30
+    const caloriesBurned = durationMinutes * 8 // HU-15: 8 kcal/min
+
+    const allPosturalErrors = []
+    exercises.forEach((ex, idx) => {
+      const exErrors = finalSessionErrors[idx] || []
+      exErrors.forEach(err => {
+        allPosturalErrors.push({
+          ejercicio: ex.nombre,
+          tipo_error: err.tipo_error,
+          repeticion: err.repeticion
+        })
+      })
+    })
+
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-white text-center">
-        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="space-y-8 max-w-md">
-          <div className="w-32 h-32 bg-yellow-400 text-black mx-auto flex items-center justify-center">
-            <Trophy className="w-16 h-16" />
+      <div className="min-h-screen bg-[#050505] text-white p-6 font-sans flex items-center justify-center">
+        <div className="max-w-3xl w-full space-y-8">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-4"
+          >
+            <div className="w-20 h-20 bg-yellow-400 text-black mx-auto flex items-center justify-center">
+              <Trophy className="w-10 h-10" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none">
+                REPORTE <span className="text-yellow-400">POST-SESIÓN</span>
+              </h1>
+              <p className="text-white/40 font-mono text-[9px] tracking-[0.4em] mt-2 uppercase">
+                SESIÓN_{routineData?.nombre || 'RUTINA'}_FINALIZADA_EXITOSAMENTE
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+            {/* Precisión */}
+            <div className="bg-[#0d0d0d] border border-white/5 p-6 flex flex-col justify-between space-y-4">
+              <span className="text-[9px] text-white/40 uppercase tracking-widest">PRECISIÓN ARTICULAR</span>
+              <p className="text-4xl font-black text-yellow-400 italic">
+                {avgPrecision}%
+              </p>
+              <div className="w-full h-1 bg-white/5">
+                <div className="h-full bg-yellow-400" style={{ width: `${avgPrecision}%` }} />
+              </div>
+            </div>
+
+            {/* Duración */}
+            <div className="bg-[#0d0d0d] border border-white/5 p-6 flex flex-col justify-between space-y-4">
+              <span className="text-[9px] text-white/40 uppercase tracking-widest">TIEMPO TOTAL</span>
+              <p className="text-4xl font-black text-white italic">
+                {durationMinutes} <span className="text-xs text-white/30 font-normal">MIN</span>
+              </p>
+              <span className="text-[8px] text-white/30 uppercase">Sincronizado con IA</span>
+            </div>
+
+            {/* Calorías */}
+            <div className="bg-[#0d0d0d] border border-white/5 p-6 flex flex-col justify-between space-y-4">
+              <span className="text-[9px] text-white/40 uppercase tracking-widest">CALORÍAS QUEMADAS</span>
+              <p className="text-4xl font-black text-red-400 italic">
+                {caloriesBurned} <span className="text-xs text-red-400/30 font-normal">KCAL</span>
+              </p>
+              <span className="text-[8px] text-red-500/40 uppercase">Metabolismo estimado</span>
+            </div>
           </div>
-          <h1 className="text-5xl font-black italic uppercase italic tracking-tighter">
-            OPERACIÓN
-            <br />
-            <span className="text-yellow-400">COMPLETADA</span>
-          </h1>
-          <p className="text-white/40 font-mono text-xs tracking-widest leading-loose">
-            SESIÓN FINALIZADA. LOS DATOS HAN SIDO SINCRONIZADOS CON TU PERFIL DE RENDIMIENTO.
-          </p>
+
+          {/* Incidencias Log */}
+          <div className="bg-[#0d0d0d] border border-white/5 p-6 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-white/60 font-mono">
+              LOG DE INCIDENCIAS POSTURALES POR REPETICIÓN (HU-14)
+            </h3>
+            {allPosturalErrors.length === 0 ? (
+              <div className="text-center py-8 border border-white/5 bg-white/[0.01]">
+                <p className="text-[9px] font-mono text-green-400 uppercase tracking-widest">
+                  ¡EXCELENTE EJECUCIÓN! NO SE REGISTRARON ERRORES DE POSTURA
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar font-mono text-[10px]">
+                {allPosturalErrors.map((err, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-white/[0.01] border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <span className="text-red-500">⚠</span>
+                      <span className="text-white/60">{err.ejercicio}</span>
+                    </div>
+                    <div className="text-right flex gap-4">
+                      <span className="text-red-400">{err.tipo_error}</span>
+                      <span className="text-yellow-400 font-bold">REP #{err.repeticion}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action Button */}
           <button
             onClick={() => navigate('/home')}
-            className="w-full bg-white text-black py-5 font-black uppercase tracking-[0.3em] text-[10px] hover:bg-yellow-400 transition-all"
+            className="w-full bg-white text-black py-5 font-black uppercase tracking-[0.3em] text-[10px] hover:bg-yellow-400 transition-all font-mono"
           >
-            VOLVER AL TERMINAL
+            VOLVER AL TERMINAL PRINCIPAL
           </button>
-        </motion.div>
+        </div>
       </div>
     )
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] font-sans text-white">
@@ -478,6 +634,14 @@ export default function RoutineWorkoutPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Botón para mostrar/ocultar esqueleto interactivo (HU-12) */}
+            <button
+              onClick={() => setShowSkeleton(!showSkeleton)}
+              className={`p-2 border ${showSkeleton ? 'border-yellow-400 text-yellow-400' : 'border-white/10 text-white/20'}`}
+              title={showSkeleton ? "Ocultar esqueleto interactivo" : "Mostrar esqueleto interactivo"}
+            >
+              {showSkeleton ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </button>
             <button
               onClick={() => setVoiceEnabled(!voiceEnabled)}
               className={`p-2 border ${voiceEnabled ? 'border-yellow-400 text-yellow-400' : 'border-white/10 text-white/20'}`}
@@ -575,7 +739,18 @@ export default function RoutineWorkoutPage() {
                       : 'opacity-100'
                   )}
                 >
-                  <YogaPoseDetector onPoseDetected={handlePoseDetected} highlightedAngles={[]} />
+                  <YogaPoseDetector
+                    onPoseDetected={handlePoseDetected}
+                    highlightedAngles={highlightedAngles}
+                    isCalibrated={isCalibrated}
+                    onCalibrationComplete={() => {
+                      setIsCalibrated(true)
+                      if (voiceEnabled) {
+                        speak('¡Calibración exitosa! Comienza tu ejercicio.', 'encouragement', true)
+                      }
+                    }}
+                    showSkeleton={showSkeleton}
+                  />
                 </div>
 
                 <VoiceFeedbackOverlay

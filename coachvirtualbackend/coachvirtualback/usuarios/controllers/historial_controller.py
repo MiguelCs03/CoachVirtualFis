@@ -88,23 +88,41 @@ class HistorialPaginadoView(APIView):
         user = request.user
         data = request.data
 
-        # Si viene un listado, se crea en lote (bulk create)
+        # Si viene un listado, se crea en lote
         if isinstance(data, list):
-            items_to_create = []
-            for item in data:
-                nombre = item.get("nombre_ejercicio")
-                if nombre:
-                    items_to_create.append(HistorialEntrenamiento(
-                        usuario=user,
-                        nombre_ejercicio=nombre,
-                        repeticiones=int(item.get("repeticiones", 0)),
-                        tiempo_segundos=float(item.get("tiempo_segundos", 0.0)),
-                        precision_porcentaje=float(item.get("precision_porcentaje", 100.0)),
-                        completado=item.get("completado", True)
-                    ))
+            from django.db import transaction
+            from ..models import ErrorPostural
             
-            if items_to_create:
-                created = HistorialEntrenamiento.objects.bulk_create(items_to_create)
+            created_count = 0
+            with transaction.atomic():
+                for item in data:
+                    nombre = item.get("nombre_ejercicio")
+                    if nombre:
+                        h = HistorialEntrenamiento.objects.create(
+                            usuario=user,
+                            nombre_ejercicio=nombre,
+                            repeticiones=int(item.get("repeticiones", 0)),
+                            tiempo_segundos=float(item.get("tiempo_segundos", 0.0)),
+                            precision_porcentaje=float(item.get("precision_porcentaje", 100.0)),
+                            completado=item.get("completado", True)
+                        )
+                        created_count += 1
+                        
+                        # Guardar errores asociados (HU-14)
+                        errores = item.get("errores", [])
+                        for err in errores:
+                            tipo_error = err.get("tipo_error")
+                            rep = int(err.get("repeticion", 0))
+                            if tipo_error:
+                                ErrorPostural.objects.create(
+                                    historial=h,
+                                    usuario=user,
+                                    tipo_error=tipo_error,
+                                    repeticion=rep,
+                                    cantidad=1
+                                )
+            
+            if created_count > 0:
                 # Verifica logros y metas
                 from ..services.notification_engine import NotificationEngine
                 engine = NotificationEngine(user)
@@ -112,7 +130,7 @@ class HistorialPaginadoView(APIView):
                 total_routines = HistorialEntrenamiento.objects.filter(usuario=user, completado=True).count()
                 engine.check_progress_milestone(total_routines)
 
-                return Response({"detail": f"Se crearon {len(created)} registros exitosamente."}, status=status.HTTP_201_CREATED)
+                return Response({"detail": f"Se crearon {created_count} registros exitosamente."}, status=status.HTTP_201_CREATED)
             return Response({"detail": "No se enviaron registros validos."}, status=status.HTTP_400_BAD_REQUEST)
         
         # Si es un solo registro
@@ -121,14 +139,32 @@ class HistorialPaginadoView(APIView):
             if not nombre:
                 return Response({"detail": "El nombre del ejercicio es requerido."}, status=status.HTTP_400_BAD_REQUEST)
             
-            h = HistorialEntrenamiento.objects.create(
-                usuario=user,
-                nombre_ejercicio=nombre,
-                repeticiones=int(data.get("repeticiones", 0)),
-                tiempo_segundos=float(data.get("tiempo_segundos", 0.0)),
-                precision_porcentaje=float(data.get("precision_porcentaje", 100.0)),
-                completado=data.get("completado", True)
-            )
+            from django.db import transaction
+            from ..models import ErrorPostural
+            
+            with transaction.atomic():
+                h = HistorialEntrenamiento.objects.create(
+                    usuario=user,
+                    nombre_ejercicio=nombre,
+                    repeticiones=int(data.get("repeticiones", 0)),
+                    tiempo_segundos=float(data.get("tiempo_segundos", 0.0)),
+                    precision_porcentaje=float(data.get("precision_porcentaje", 100.0)),
+                    completado=data.get("completado", True)
+                )
+                
+                # Guardar errores asociados (HU-14)
+                errores = data.get("errores", [])
+                for err in errores:
+                    tipo_error = err.get("tipo_error")
+                    rep = int(err.get("repeticion", 0))
+                    if tipo_error:
+                        ErrorPostural.objects.create(
+                            historial=h,
+                            usuario=user,
+                            tipo_error=tipo_error,
+                            repeticion=rep,
+                            cantidad=1
+                        )
             
             # Verifica logros y metas
             from ..services.notification_engine import NotificationEngine
