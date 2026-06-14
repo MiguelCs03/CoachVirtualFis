@@ -47,11 +47,20 @@ class ErrorBoundary extends React.Component {
             </div>
 
             {/* Título */}
-            <h1 className="text-2xl font-bold text-white mb-3">¡Ups! Algo salió mal</h1>
+            <h1 className="text-2xl font-bold text-white mb-3">Error</h1>
+
+            {/* Mensaje del error real */}
+            {this.state.error && (
+              <div className="mb-4 p-3 bg-black/40 rounded-lg overflow-auto max-h-28">
+                <pre className="text-red-300 text-xs whitespace-pre-wrap font-mono">
+                  {this.state.error.toString()}
+                </pre>
+              </div>
+            )}
 
             {/* Mensaje amigable */}
             <p className="text-gray-300 mb-6">
-              No te preocupes, esto puede pasar. Intenta recargar la página o volver al inicio.
+              Ocurrió un error inesperado. Puedes reintentar o volver al inicio.
             </p>
 
             {/* Botones de acción */}
@@ -72,25 +81,6 @@ class ErrorBoundary extends React.Component {
                 Ir al Inicio
               </button>
             </div>
-
-            {/* Detalles técnicos (colapsados) */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mt-6 text-left">
-                <summary className="text-gray-400 cursor-pointer text-sm hover:text-gray-300">
-                  Ver detalles técnicos
-                </summary>
-                <div className="mt-3 p-3 bg-black/30 rounded-lg overflow-auto max-h-40">
-                  <pre className="text-red-400 text-xs whitespace-pre-wrap">
-                    {this.state.error.toString()}
-                  </pre>
-                  {this.state.errorInfo && (
-                    <pre className="text-gray-500 text-xs mt-2 whitespace-pre-wrap">
-                      {this.state.errorInfo.componentStack}
-                    </pre>
-                  )}
-                </div>
-              </details>
-            )}
 
             {/* Emoji de ánimo */}
             <p className="mt-6 text-4xl">💪</p>
