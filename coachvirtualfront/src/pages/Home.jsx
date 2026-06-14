@@ -535,9 +535,19 @@ const Home = () => {
               <Sparkles className="w-48 h-48 text-yellow-400" />
             </div>
             <div className="space-y-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-xs font-black uppercase tracking-widest text-white/60">RECOMENDACIÓN DEL DÍA</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-yellow-400" />
+                  <h3 className="text-xs font-black uppercase tracking-widest text-white/60">RECOMENDACIÓN DEL DÍA</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowWizard(true)}
+                  className="text-[8px] font-mono border border-white/10 hover:border-yellow-400 hover:text-yellow-400 bg-white/[0.02] hover:bg-yellow-400/5 px-2 py-1 text-white/50 uppercase transition-all tracking-wider rounded-none"
+                  title="Modificar equipamiento disponible o lesiones"
+                >
+                  [AJUSTAR EQUIPO / PERFIL]
+                </button>
               </div>
               {recomendacion ? (
                 <div className="space-y-4">

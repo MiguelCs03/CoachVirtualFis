@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Dumbbell, Activity, ShieldCheck, HelpCircle, Terminal, Eye, Sparkles, ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../../api/api'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
 export default function CatalogoEjercicios() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+
+  // Mapear nombre del ejercicio a clave de práctica (HU Práctica Amateur)
+  const getPracticeKey = (nombre) => {
+    const name = nombre.toLowerCase()
+    if (name.includes('biceps') || name.includes('bíceps')) return 'biceps'
+    if (name.includes('sentadilla') || name.includes('squat')) return 'squats'
+    if (name.includes('flexi')) return 'flexiones'
+    if (name.includes('plancha') || name.includes('plank')) return 'plancha'
+    if (name.includes('rotación') || name.includes('rotacion')) return 'rotacion'
+    return null
+  }
   const [exercises, setExercises] = useState([])
   const [filteredExercises, setFilteredExercises] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -228,10 +240,19 @@ export default function CatalogoEjercicios() {
 
                     </div>
 
-                    <div className="px-6 pb-6 pt-2">
+                    <div className="px-6 pb-6 pt-2 flex flex-col gap-3">
                       <div className="flex items-center gap-2 text-[9px] font-mono tracking-widest text-white/30 uppercase">
                         <ShieldCheck className="w-4 h-4 text-green-400" /> SINOPSIS BIOMÉTRICA ACTIVA
                       </div>
+                      {getPracticeKey(ex.nombre) && (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/ejercicios', { state: { initialExercise: getPracticeKey(ex.nombre) } })}
+                          className="w-full bg-yellow-400 text-black py-2.5 font-mono text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all rounded-none shadow-[5px_5px_0px_rgba(255,230,0,0.15)] hover:shadow-[5px_5px_0px_rgba(255,255,255,0.15)] flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Terminal className="w-3.5 h-3.5" /> [PROBAR_EJERCICIO_AMATEUR]
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}

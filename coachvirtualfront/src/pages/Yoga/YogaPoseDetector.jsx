@@ -388,7 +388,7 @@ export default function YogaPoseDetector({
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden"
+      className="relative rounded-none overflow-hidden border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)]"
       style={{
         minHeight: '350px',
         background: 'linear-gradient(135deg, #1e3a5f 0%, #2d1b4e 50%, #1a1a2e 100%)',
@@ -397,12 +397,12 @@ export default function YogaPoseDetector({
       {/* Indicador de estado */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2 font-mono">
         {cameraReady && modelReady ? (
-          <div className="flex items-center gap-1.5 bg-green-600/90 text-white text-xs px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 border border-green-500/50 bg-green-500/10 text-green-400 text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-none shadow-[0_0_10px_rgba(34,197,94,0.15)]">
             <Zap className="w-3.5 h-3.5" />
             <span>Activo</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 bg-yellow-600/90 text-white text-xs px-2.5 py-1 rounded-full animate-pulse">
+          <div className="flex items-center gap-1.5 border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-none animate-pulse shadow-[0_0_10px_rgba(255,230,0,0.15)]">
             <Camera className="w-3.5 h-3.5" />
             <span>{cameraReady ? 'Preparando IA...' : 'Conectando...'}</span>
           </div>

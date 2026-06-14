@@ -64,24 +64,26 @@ export default function VoiceFeedbackOverlay({
   return (
     <>
       {/* Indicador de voz activa - esquina superior izquierda */}
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+      <div className="absolute top-12 left-3 z-20 flex flex-col gap-2 font-mono">
         {/* Toggle de voz */}
         <button
           onClick={() => onVoiceToggle?.(!voiceEnabled)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-sm transition-all duration-300 ${
-            voiceEnabled ? 'bg-green-500/90 text-white' : 'bg-gray-600/90 text-gray-300'
+          className={`flex items-center gap-1.5 px-3 py-1.5 border font-mono text-[9px] uppercase tracking-widest rounded-none transition-all duration-300 ${
+            voiceEnabled 
+              ? 'bg-yellow-400/10 border-yellow-400 text-yellow-400 shadow-[0_0_12px_rgba(255,230,0,0.15)]' 
+              : 'bg-black/90 border-white/10 text-white/40 hover:border-white/20'
           }`}
           title={voiceEnabled ? 'Desactivar voz' : 'Activar voz'}
         >
-          {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-          <span className="text-sm font-medium">{voiceEnabled ? 'Voz ON' : 'Voz OFF'}</span>
+          {voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+          <span>{voiceEnabled ? 'Voz ON' : 'Voz OFF'}</span>
         </button>
 
         {/* Indicador de hablando */}
         {isSpeaking && voiceEnabled && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/90 text-white rounded-full backdrop-blur-sm animate-pulse">
-            <Mic className="w-4 h-4" />
-            <span className="text-sm font-medium truncate max-w-[200px]">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-none backdrop-blur-sm animate-pulse text-[9px] uppercase tracking-wider max-w-[200px]">
+            <Mic className="w-3.5 h-3.5 text-blue-400" />
+            <span className="truncate">
               {currentMessage || 'Hablando...'}
             </span>
           </div>
@@ -89,7 +91,7 @@ export default function VoiceFeedbackOverlay({
 
         {/* Control de volumen */}
         {voiceEnabled && showVolume && (
-          <div className="px-3 py-2 bg-black/80 rounded-lg backdrop-blur-sm">
+          <div className="px-3 py-2 bg-black/95 border border-white/10 rounded-none backdrop-blur-sm">
             <input
               type="range"
               min="0"
@@ -97,72 +99,63 @@ export default function VoiceFeedbackOverlay({
               step="0.1"
               value={volume}
               onChange={handleVolumeChange}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className="w-full h-1 bg-white/10 rounded-none appearance-none cursor-pointer accent-yellow-400"
             />
-            <p className="text-white text-xs text-center mt-1">{Math.round(volume * 100)}%</p>
+            <p className="text-white/50 text-[8px] text-center mt-1 font-mono">{Math.round(volume * 100)}%</p>
           </div>
         )}
       </div>
 
       {/* INDICADOR ÚNICO DINÁMICO - Verde=Correcto, Rojo=Incorrecto */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-        <div
-          className={`flex items-center gap-3 px-6 py-3 rounded-xl backdrop-blur-md shadow-lg transition-all duration-300 ${
-            isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-          }`}
-        >
-          {isCorrect ? (
-            <>
-              <CheckCircle className="w-6 h-6" />
-              <span className="font-bold text-lg">¡Postura Correcta!</span>
-            </>
-          ) : (
-            <>
-              <AlertCircle className="w-6 h-6" />
-              <div>
-                <span className="font-bold text-lg block">Corrige tu postura</span>
-                {corrections.length > 0 && (
-                  <span className="text-sm opacity-90">
-                    {corrections[0]?.message || corrections[0]}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-20 w-auto max-w-[90%] sm:max-w-md">
+        {isCorrect ? (
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/40 text-green-400 font-mono text-[9px] uppercase tracking-wider rounded-none backdrop-blur-md shadow-[0_0_15px_rgba(34,197,94,0.15)]">
+            <CheckCircle className="w-4 h-4 text-green-400" />
+            <span className="font-black">[POSTURA_CORRECTA]</span>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 px-4 py-2 bg-red-500/10 border border-red-500/40 text-red-400 font-mono text-[9px] uppercase tracking-wider rounded-none backdrop-blur-md shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+            <AlertCircle className="w-4 h-4 text-red-400 animate-pulse mt-0.5" />
+            <div>
+              <span className="font-black block">[SISTEMA_ERROR] CORRIGE TU POSTURA</span>
+              {corrections.length > 0 && (
+                <span className="text-[8px] text-white/70 block mt-1 lowercase font-normal leading-normal">
+                  &gt;&gt; {corrections[0]?.message || corrections[0]}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Contador de repeticiones O Cronómetro isométrico - esquina superior derecha */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-3 right-3 z-20">
         {isIsometric ? (
           // Cronómetro para ejercicios isométricos
-          <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl px-5 py-3 shadow-xl min-w-[120px]">
-            <div className="flex items-center gap-2 justify-center mb-1">
-              <Timer className="w-4 h-4 text-orange-200" />
-              <p className="text-orange-200 text-xs">Mantener</p>
-            </div>
-            <p
-              className={`text-4xl font-bold text-white text-center transition-all ${isCorrect ? 'animate-pulse' : ''}`}
-            >
+          <div className="relative bg-[#0d0d0d]/95 border border-white/10 rounded-none px-4 py-2.5 min-w-[120px] shadow-[8px_8px_0px_rgba(0,0,0,0.4)] font-mono text-center">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-orange-500" />
+            <p className="text-[8px] text-white/40 uppercase tracking-widest mb-0.5">ISOMÉTRICO</p>
+            <p className={`text-3xl font-black text-orange-400 italic leading-none my-1 ${isCorrect ? 'animate-pulse' : ''}`}>
               {formatTime(remainingTime)}
             </p>
             {/* Barra de progreso */}
-            <div className="mt-2 bg-white/30 rounded-full h-2 overflow-hidden">
+            <div className="mt-1.5 bg-white/5 border border-white/10 rounded-none h-1 overflow-hidden">
               <div
-                className="bg-white h-full rounded-full transition-all duration-500"
+                className="bg-orange-500 h-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-orange-200 text-xs text-center mt-1">
-              {isCorrect ? '¡Bien! Mantén la posición' : 'Corrige para continuar'}
+            <p className="text-[7px] text-orange-400/70 uppercase tracking-wider mt-1.5 leading-none">
+              {isCorrect ? 'MANTENER_OK' : 'CORREGIR_POS'}
             </p>
           </div>
         ) : (
           // Contador de repeticiones normal
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl px-5 py-3 shadow-xl">
-            <p className="text-blue-200 text-xs text-center mb-1">Repeticiones</p>
-            <p className="text-4xl font-bold text-white text-center">{repCount}</p>
-            <p className="text-blue-200 text-xs text-center mt-1">de {targetReps}</p>
+          <div className="relative bg-[#0d0d0d]/95 border border-white/10 rounded-none px-4 py-2.5 min-w-[100px] shadow-[8px_8px_0px_rgba(0,0,0,0.4)] font-mono text-center">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-yellow-400" />
+            <p className="text-[8px] text-white/40 uppercase tracking-widest mb-0.5">REPETICIONES</p>
+            <p className="text-3xl font-black text-yellow-400 italic leading-none my-1">{repCount}</p>
+            <p className="text-[7px] text-white/30 uppercase tracking-wider leading-none">DE {targetReps}</p>
           </div>
         )}
       </div>

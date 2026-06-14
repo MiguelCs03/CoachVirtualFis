@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { Terminal } from 'lucide-react'
 import BicepsCurl from './BicepsCurl'
 import Squats from './Squats'
 import Flexiones from './Flexiones'
@@ -7,7 +8,14 @@ import RotacionTronco from './RotacionTronco'
 import Plancha from './Plancha'
 
 export default function EjerciciosPage() {
+  const location = useLocation()
   const [selectedExercise, setSelectedExercise] = useState('biceps')
+
+  useEffect(() => {
+    if (location.state?.initialExercise) {
+      setSelectedExercise(location.state.initialExercise)
+    }
+  }, [location.state])
 
   const exercises = [
     {
@@ -65,44 +73,32 @@ export default function EjerciciosPage() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen bg-[#050505] text-white">
       {/* Selector flotante superior */}
       <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
-        <div className="bg-white rounded-xl shadow-2xl p-4 backdrop-blur-sm bg-opacity-95">
+        <div className="bg-black/95 border border-white/10 rounded-none p-4 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.85)] relative overflow-hidden">
+          {/* Top highlight bar */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-yellow-400" />
+          
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              🏋️ Selecciona el Ejercicio
+            <label className="block text-[10px] font-black text-white/40 tracking-widest uppercase mb-3 flex items-center gap-2 font-mono">
+              <Terminal className="w-3.5 h-3.5 text-yellow-400" /> [MODO_PRÁCTICA_AMATEUR] SELECCIONA UNIDAD
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono">
               {exercises.map((exercise) => {
                 const isActive = selectedExercise === exercise.id
-                const bgColor = isActive
-                  ? exercise.color === 'indigo'
-                    ? 'bg-indigo-50 border-indigo-600'
-                    : exercise.color === 'emerald'
-                      ? 'bg-emerald-50 border-emerald-600'
-                      : exercise.color === 'orange'
-                        ? 'bg-orange-50 border-orange-600'
-                        : exercise.color === 'teal'
-                          ? 'bg-teal-50 border-teal-600'
-                          : exercise.color === 'purple'
-                            ? 'bg-purple-50 border-purple-600'
-                            : 'bg-gray-50 border-gray-600'
-                  : 'border-gray-200 hover:border-gray-400'
-
                 return (
                   <button
                     key={exercise.id}
                     onClick={() => setSelectedExercise(exercise.id)}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${bgColor}`}
+                    className={`p-2.5 border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer rounded-none uppercase ${
+                      isActive
+                        ? 'bg-yellow-400/10 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(255,230,0,0.15)] font-bold'
+                        : 'bg-white/[0.01] border-white/5 text-white/50 hover:border-white/20 hover:text-white'
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl">{exercise.icon}</div>
-                      <div>
-                        <div className="font-semibold">{exercise.name}</div>
-                        <div className="text-xs text-gray-600">{exercise.description}</div>
-                      </div>
-                    </div>
+                    <span className="text-xl">{exercise.icon}</span>
+                    <span className="text-[8px] tracking-wider truncate max-w-full font-bold">{exercise.name}</span>
                   </button>
                 )
               })}
@@ -113,16 +109,15 @@ export default function EjerciciosPage() {
 
       {/* Botón de volver */}
       <div className="fixed bottom-6 right-6 z-50">
-        <Link to="/">
-          <button className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-6 rounded-full shadow-lg transition-all transform hover:scale-105 flex items-center gap-2">
-            <span>←</span>
-            <span>Volver al Inicio</span>
+        <Link to="/catalogo-ejercicios">
+          <button className="bg-[#0d0d0d] border border-white/10 hover:border-yellow-400 hover:text-yellow-400 text-white font-mono text-[9px] font-black uppercase tracking-widest py-3 px-6 rounded-none shadow-[10px_10px_0px_rgba(0,0,0,0.4)] transition-all transform hover:scale-105 flex items-center gap-1.5 cursor-pointer">
+            <span>&lt; VOLVER AL CATÁLOGO</span>
           </button>
         </Link>
       </div>
 
       {/* Renderizar ejercicio seleccionado */}
-      <div className="mt-24">{renderSelectedExercise()}</div>
+      <div className="pt-36">{renderSelectedExercise()}</div>
     </div>
   )
 }
