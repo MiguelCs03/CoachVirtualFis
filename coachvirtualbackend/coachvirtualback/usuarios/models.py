@@ -223,6 +223,7 @@ class PerfilClinico(models.Model):
     objetivo_principal = models.CharField(max_length=100, blank=True, null=True) # e.g. "Rehabilitación", "Fuerza"
     experiencia_deporte = models.CharField(max_length=50, blank=True, null=True) # e.g. "Principiante", "Intermedio"
     dias_entrenamiento = models.IntegerField(default=3)
+    equipamiento = models.CharField(max_length=50, default="ninguno", help_text="Equipamiento disponible (ninguno, mancuernas, completo)") # Equipamiento disponible (ninguno, mancuernas, completo)
     
     # Checkboxes de lesiones predefinidas (HU05)
     tiene_dolor_lumbar = models.BooleanField(default=False)

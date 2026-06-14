@@ -15,6 +15,7 @@ class PerfilClinicoSerializer(serializers.ModelSerializer):
             "objetivo_principal",
             "experiencia_deporte",
             "dias_entrenamiento",
+            "equipamiento",
             "tiene_dolor_lumbar",
             "tiene_lesion_menisco",
             "tiene_dolor_cervical",

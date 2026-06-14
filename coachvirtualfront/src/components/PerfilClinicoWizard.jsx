@@ -12,6 +12,7 @@ export default function PerfilClinicoWizard({ onComplete }) {
   const [objetivo, setObjetivo] = useState('Rehabilitación')
   const [nivel, setNivel] = useState('Principiante')
   const [dias, setDias] = useState(3)
+  const [equipamiento, setEquipamiento] = useState('ninguno') // HU de Equipamiento (ninguno, mancuernas, completo)
   
   // Lesiones
   const [dolorLumbar, setDolorLumbar] = useState(false)
@@ -39,7 +40,8 @@ export default function PerfilClinicoWizard({ onComplete }) {
       tiene_lesion_hombro: lesionHombro,
       tiene_tendinitis: tendinitis,
       otras_lesiones: otrasLesiones,
-      observaciones: observaciones
+      observaciones: observaciones,
+      equipamiento: equipamiento
     }
 
     try {
@@ -241,6 +243,33 @@ export default function PerfilClinicoWizard({ onComplete }) {
                           }`}
                         >
                           {d} DÍAS
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-white/40 tracking-widest uppercase flex items-center gap-2">
+                      <Activity className="w-3.5 h-3.5 text-yellow-400" /> EQUIPAMIENTO DISPONIBLE
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[
+                        { id: 'ninguno', title: 'Peso Corporal', desc: 'Sin implementos' },
+                        { id: 'mancuernas', title: 'Mancuernas / Bandas', desc: 'Equipo de casa' },
+                        { id: 'completo', title: 'Gimnasio Completo', desc: 'Máquinas y barras' }
+                      ].map((eq) => (
+                        <button
+                          key={eq.id}
+                          type="button"
+                          onClick={() => setEquipamiento(eq.id)}
+                          className={`p-3 border font-mono text-left transition-all uppercase tracking-wider rounded-none flex flex-col justify-between min-h-[70px] ${
+                            equipamiento === eq.id
+                              ? 'bg-yellow-400/10 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(255,230,0,0.1)]'
+                              : 'bg-white/[0.02] border-white/5 text-white/60 hover:border-white/20'
+                          }`}
+                        >
+                          <span className="font-bold text-[10px]">{eq.title}</span>
+                          <span className="text-[8px] text-white/30 mt-1 lowercase font-normal leading-tight">{eq.desc}</span>
                         </button>
                       ))}
                     </div>

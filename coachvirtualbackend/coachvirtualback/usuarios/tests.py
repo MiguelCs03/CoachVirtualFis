@@ -251,6 +251,65 @@ class ValidacionDatosUsuarioTest(TestCase):
         self.assertIn(".", user.email)
 
 
+class RecomendacionViewTest(APITestCase):
+    """Tests para la vista de recomendación inteligente de rutina diaria filtrando por equipamiento"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="recomuser", email="recom@coachvirtual.com", password="testpass123"
+        )
+        from musculos.models import Ejercicio
+        # Crear ejercicios de prueba con diferentes palabras clave
+        self.ej1 = Ejercicio.objects.create(nombre="Flexiones de pecho", url="http://example.com/flex.gif", estado=True)
+        self.ej2 = Ejercicio.objects.create(nombre="Curl con mancuernas de pie", url="http://example.com/curl.gif", estado=True)
+        self.ej3 = Ejercicio.objects.create(nombre="Aperturas en máquina Mariposa", url="http://example.com/butterfly.gif", estado=True)
+
+    def test_recomendacion_sin_equipamiento(self):
+        """Test: Recomendación con equipamiento 'ninguno' sólo incluye peso corporal"""
+        from .models import PerfilClinico
+        PerfilClinico.objects.create(usuario=self.user, equipamiento="ninguno")
+        self.client.force_authenticate(user=self.user)
+        url = "/api/usuarios/recomendacion-dia/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        ejercicios = response.data["ejercicios"]
+        nombres = [e["nombre"] for e in ejercicios]
+        
+        self.assertIn("Flexiones de pecho", nombres)
+        self.assertNotIn("Curl con mancuernas de pie", nombres)
+        self.assertNotIn("Aperturas en máquina Mariposa", nombres)
+
+    def test_recomendacion_con_mancuernas(self):
+        """Test: Recomendación con equipamiento 'mancuernas' incluye peso corporal y mancuernas, pero no máquinas"""
+        from .models import PerfilClinico
+        PerfilClinico.objects.create(usuario=self.user, equipamiento="mancuernas")
+        self.client.force_authenticate(user=self.user)
+        url = "/api/usuarios/recomendacion-dia/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        ejercicios = response.data["ejercicios"]
+        nombres = [e["nombre"] for e in ejercicios]
+
+        self.assertIn("Flexiones de pecho", nombres)
+        self.assertIn("Curl con mancuernas de pie", nombres)
+        self.assertNotIn("Aperturas en máquina Mariposa", nombres)
+
+    def test_recomendacion_con_gimnasio_completo(self):
+        """Test: Recomendación con equipamiento 'completo' incluye todos los ejercicios"""
+        from .models import PerfilClinico
+        PerfilClinico.objects.create(usuario=self.user, equipamiento="completo")
+        self.client.force_authenticate(user=self.user)
+        url = "/api/usuarios/recomendacion-dia/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        ejercicios = response.data["ejercicios"]
+        nombres = [e["nombre"] for e in ejercicios]
+
+        self.assertIn("Flexiones de pecho", nombres)
+        self.assertIn("Curl con mancuernas de pie", nombres)
+        self.assertIn("Aperturas en máquina Mariposa", nombres)
+
+
 # ============================================
 # RESUMEN DE COBERTURA DE TESTS - USUARIOS
 # ============================================

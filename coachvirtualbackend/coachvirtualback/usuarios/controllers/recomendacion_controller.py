@@ -16,9 +16,10 @@ class RecomendacionView(APIView):
     def get(self, request: Request) -> Response:
         user = request.user
         
-        # 1. Obtener datos clínicos (Objetivo y lesiones)
+        # 1. Obtener datos clínicos (Objetivo, equipamiento y lesiones)
         objetivo = "Acondicionamiento"
         dias_semana = 3
+        equipamiento = "ninguno"
         dolor_lumbar = False
         lesion_menisco = False
         dolor_cervical = False
@@ -29,6 +30,7 @@ class RecomendacionView(APIView):
             perfil = user.perfil_clinico
             objetivo = perfil.objetivo_principal or "Rehabilitación"
             dias_semana = perfil.dias_entrenamiento or 3
+            equipamiento = perfil.equipamiento or "ninguno"
             dolor_lumbar = perfil.tiene_dolor_lumbar
             lesion_menisco = perfil.tiene_lesion_menisco
             dolor_cervical = perfil.tiene_dolor_cervical
@@ -55,13 +57,24 @@ class RecomendacionView(APIView):
             series_calculadas = 3  # Dificultad normal
             motivo_dificultad = "Dificultad óptima (3 series base)"
 
-        # 3. Obtener ejercicios activos y filtrar según perfil clínico (lesiones)
+        # 3. Obtener ejercicios activos y filtrar según perfil clínico (lesiones y equipamiento)
         ejercicios_qs = Ejercicio.objects.filter(estado=True)
         ejercicios_validos = []
         
         for ej in ejercicios_qs:
             nombre_lower = ej.nombre.lower()
             
+            # Filtros de equipamiento (Peso Corporal, Mancuernas, Completo)
+            if equipamiento == "ninguno":
+                # Peso corporal: excluir mancuernas, barras, bandas, máquinas, poleas, prensa, hack, banco, bastón
+                if any(word in nombre_lower for word in ["mancuerna", "máquina", "maquina", "barra", "band", "bastón", "baston", "prensa", "hack", "banco"]):
+                    continue
+            elif equipamiento == "mancuernas":
+                # Mancuernas: excluir máquinas de gimnasio, barras pesadas, prensa, hack
+                if any(word in nombre_lower for word in ["máquina", "maquina", "barra", "prensa", "hack"]):
+                    continue
+            # Si equipamiento es 'completo', se permiten todos los ejercicios
+
             # Filtros clínicos para evitar ejercicios peligrosos
             if dolor_lumbar and any(word in nombre_lower for word in ["sentadilla", "peso muerto", "crunch", "abdom", "plancha"]):
                 continue

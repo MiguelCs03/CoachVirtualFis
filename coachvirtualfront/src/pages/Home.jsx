@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -114,6 +114,56 @@ const Home = () => {
     }
   }, [location.search, refrescarPlan, showNotification])
 
+  const cargarDatos = useCallback(async () => {
+    try {
+      setLoadingRutinas(true)
+      const [data, dashboardData, recomendacionRes, logrosRes] = await Promise.all([
+        rutinaService.list(),
+        dashboardService.getStats().catch(err => {
+          console.error('Error cargando stats de dashboard:', err);
+          return null;
+        }),
+        api.get('/usuarios/recomendacion-dia/').catch(() => null),
+        api.get('/usuarios/logros/').catch(() => null)
+      ])
+      
+      if (dashboardData) {
+        if (dashboardData.estadisticas) setEstadisticas(dashboardData.estadisticas)
+        if (dashboardData.datosGrafica) setDatosGrafica(dashboardData.datosGrafica)
+        if (dashboardData.erroresFrecuentes) setErroresFrecuentes(dashboardData.erroresFrecuentes)
+        if (dashboardData.erroresRecientes) setErroresRecientes(dashboardData.erroresRecientes)
+        if (dashboardData.ultimosEntrenamientos) setUltimosEntrenamientos(dashboardData.ultimosEntrenamientos)
+      }
+
+      if (recomendacionRes && recomendacionRes.data) {
+        setRecomendacion(recomendacionRes.data)
+      }
+
+      if (logrosRes && logrosRes.data) {
+        setLogros(logrosRes.data)
+      }
+
+      if (Array.isArray(data) && data.length > 0) {
+        const normalized = data.map((r) => ({
+          id: r.id,
+          nombre: r.nombre || r.title || 'PROTOCOLO_S/N',
+          categoria: r.categoria || 'GIMNASIO',
+          parte: r.parte_cuerpo || r.parte || 'ESTÁNDAR',
+          ejercicios: Array.isArray(r.datos_rutina) ? r.datos_rutina.length : r.ejercicios || 0,
+          duracion: r.duracion_minutos ? `${r.duracion_minutos} MIN` : r.duracion || '45 MIN',
+          progreso: r.progreso ?? 0,
+          datos_rutina: r.datos_rutina || r.exercises || [],
+        }))
+        setRutinas(normalized)
+      }
+    } catch (err) {
+      console.error('Error cargando rutinas:', err)
+      showNotification('Fallo de conexión en el banco de datos de rutinas.', 'error')
+    } finally {
+      setLoadingRutinas(false)
+    }
+  }, [showNotification])
+
   useEffect(() => {
     setMounted(true)
 
@@ -124,56 +174,8 @@ const Home = () => {
       }
     })
 
-    ;(async () => {
-      try {
-        setLoadingRutinas(true)
-        const [data, dashboardData, recomendacionRes, logrosRes] = await Promise.all([
-          rutinaService.list(),
-          dashboardService.getStats().catch(err => {
-            console.error('Error cargando stats de dashboard:', err);
-            return null;
-          }),
-          api.get('/usuarios/recomendacion-dia/').catch(() => null),
-          api.get('/usuarios/logros/').catch(() => null)
-        ])
-        
-        if (dashboardData) {
-          if (dashboardData.estadisticas) setEstadisticas(dashboardData.estadisticas)
-          if (dashboardData.datosGrafica) setDatosGrafica(dashboardData.datosGrafica)
-          if (dashboardData.erroresFrecuentes) setErroresFrecuentes(dashboardData.erroresFrecuentes)
-          if (dashboardData.erroresRecientes) setErroresRecientes(dashboardData.erroresRecientes)
-          if (dashboardData.ultimosEntrenamientos) setUltimosEntrenamientos(dashboardData.ultimosEntrenamientos)
-        }
-
-        if (recomendacionRes && recomendacionRes.data) {
-          setRecomendacion(recomendacionRes.data)
-        }
-
-        if (logrosRes && logrosRes.data) {
-          setLogros(logrosRes.data)
-        }
-
-        if (Array.isArray(data) && data.length > 0) {
-          const normalized = data.map((r) => ({
-            id: r.id,
-            nombre: r.nombre || r.title || 'PROTOCOLO_S/N',
-            categoria: r.categoria || 'GIMNASIO',
-            parte: r.parte_cuerpo || r.parte || 'ESTÁNDAR',
-            ejercicios: Array.isArray(r.datos_rutina) ? r.datos_rutina.length : r.ejercicios || 0,
-            duracion: r.duracion_minutos ? `${r.duracion_minutos} MIN` : r.duracion || '45 MIN',
-            progreso: r.progreso ?? 0,
-            datos_rutina: r.datos_rutina || r.exercises || [],
-          }))
-          setRutinas(normalized)
-        }
-      } catch (err) {
-        console.error('Error cargando rutinas:', err)
-        showNotification('Fallo de conexión en el banco de datos de rutinas.', 'error')
-      } finally {
-        setLoadingRutinas(false)
-      }
-    })()
-  }, [showNotification])
+    cargarDatos()
+  }, [cargarDatos])
 
   const handleExplorarEjercicios = () => navigate('/catalogo-ejercicios')
 
@@ -986,7 +988,10 @@ const Home = () => {
 
       <AnimatePresence>
         {showWizard && (
-          <PerfilClinicoWizard onComplete={() => setShowWizard(false)} />
+          <PerfilClinicoWizard onComplete={() => {
+            setShowWizard(false)
+            cargarDatos()
+          }} />
         )}
       </AnimatePresence>
     </div>
