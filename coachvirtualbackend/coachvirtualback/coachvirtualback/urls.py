@@ -16,4 +16,5 @@ urlpatterns = [
     # ⬇️ ESTA línea es la que te falta
     path("api/", include("musculos.urls")),
     path("api/", include("dispositivo.urls")),
+    path("api/", include("rutinas.urls")),
 ]

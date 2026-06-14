@@ -1,108 +1,92 @@
 /**
- * rutinaService - Gestion completa de rutinas
- * Usa localStorage como almacenamiento principal para evitar errores 404
- * Soporta: listar, crear, eliminar, actualizar, agregar/quitar ejercicios
+ * rutinaService - Gestión completa de rutinas con persistencia en Base de Datos.
+ * Conecta al backend a través de la instancia de API configurada.
  */
 
-const STORAGE_KEY = 'cv_rutinas'
+import api from '../api/api'
+
+const BASE_URL = '/rutinas/'
 
 const rutinaService = {
-	// Obtener todas las rutinas
-	list: async () => {
-		const raw = localStorage.getItem(STORAGE_KEY)
-		return raw ? JSON.parse(raw) : []
-	},
+  // Obtener todas las rutinas del usuario autenticado
+  list: async () => {
+    const { data } = await api.get(BASE_URL)
+    return data
+  },
 
-	// Obtener rutina por ID
-	getById: async (id) => {
-		const list = await rutinaService.list()
-		return list.find((r) => String(r.id) === String(id)) || null
-	},
+  // Obtener rutina por ID
+  getById: async (id) => {
+    const { data } = await api.get(`${BASE_URL}${id}/`)
+    return data
+  },
 
-	// Crear nueva rutina
-	create: async (payload) => {
-		const list = await rutinaService.list()
-		const id = Date.now()
-		const item = {
-			id,
-			...payload,
-			created_at: new Date().toISOString(),
-			progreso: 0,
-		}
-		list.unshift(item)
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-		return item
-	},
+  // Crear nueva rutina
+  create: async (payload) => {
+    const { data } = await api.post(BASE_URL, payload)
+    return data
+  },
 
-	// Actualizar rutina (nombre, duracion, etc.)
-	update: async (id, updates) => {
-		const list = await rutinaService.list()
-		const index = list.findIndex((r) => String(r.id) === String(id))
-		if (index !== -1) {
-			list[index] = { ...list[index], ...updates }
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-			return list[index]
-		}
-		return null
-	},
+  // Actualizar rutina (nombre, duración, etc.)
+  update: async (id, updates) => {
+    const { data } = await api.put(`${BASE_URL}${id}/`, updates)
+    return data
+  },
 
-	// Eliminar rutina
-	delete: async (id) => {
-		const list = await rutinaService.list()
-		const filtered = list.filter((r) => String(r.id) !== String(id))
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
-		return true
-	},
+  // Eliminar rutina
+  delete: async (id) => {
+    await api.delete(`${BASE_URL}${id}/`)
+    return true
+  },
 
-	// Agregar ejercicio a rutina
-	addExercise: async (rutinaId, ejercicio) => {
-		const rutina = await rutinaService.getById(rutinaId)
-		if (rutina) {
-			const ejercicios = rutina.ejercicios || []
-			ejercicios.push({
-				id: Date.now(),
-				ejercicio_id: ejercicio.id,
-				nombre: ejercicio.nombre,
-				url: ejercicio.url,
-				repeticiones: ejercicio.repeticiones || 12,
-				series: ejercicio.series || 3,
-				descanso: ejercicio.descanso || 60,
-			})
-			return await rutinaService.update(rutinaId, { ejercicios })
-		}
-		return null
-	},
+  // Agregar ejercicio a rutina
+  addExercise: async (rutinaId, ejercicio) => {
+    const rutina = await rutinaService.getById(rutinaId)
+    if (rutina) {
+      const ejercicios = rutina.datos_rutina || []
+      ejercicios.push({
+        id: Date.now(),
+        ejercicio_id: ejercicio.id,
+        nombre: ejercicio.nombre,
+        url: ejercicio.url,
+        repeticiones: ejercicio.repeticiones || 12,
+        series: ejercicio.series || 3,
+        descanso: ejercicio.descanso || 60,
+      })
+      return await rutinaService.update(rutinaId, { datos_rutina: ejercicios })
+    }
+    return null
+  },
 
-	// Quitar ejercicio de rutina
-	removeExercise: async (rutinaId, ejercicioId) => {
-		const rutina = await rutinaService.getById(rutinaId)
-		if (rutina && rutina.ejercicios) {
-			const ejercicios = rutina.ejercicios.filter(
-				(e) =>
-					String(e.id) !== String(ejercicioId) && String(e.ejercicio_id) !== String(ejercicioId)
-			)
-			return await rutinaService.update(rutinaId, { ejercicios })
-		}
-		return null
-	},
+  // Quitar ejercicio de rutina
+  removeExercise: async (rutinaId, ejercicioId) => {
+    const rutina = await rutinaService.getById(rutinaId)
+    if (rutina && rutina.datos_rutina) {
+      const ejercicios = rutina.datos_rutina.filter(
+        (e) =>
+          String(e.id) !== String(ejercicioId) && String(e.ejercicio_id) !== String(ejercicioId)
+      )
+      return await rutinaService.update(rutinaId, { datos_rutina: ejercicios })
+    }
+    return null
+  },
 
-	// Actualizar ejercicio en rutina
-	updateExercise: async (rutinaId, ejercicioId, updates) => {
-		const rutina = await rutinaService.getById(rutinaId)
-		if (rutina && rutina.ejercicios) {
-			const ejercicios = rutina.ejercicios.map((e) => {
-				if (
-					String(e.id) === String(ejercicioId) ||
-					String(e.ejercicio_id) === String(ejercicioId)
-				) {
-					return { ...e, ...updates }
-				}
-				return e
-			})
-			return await rutinaService.update(rutinaId, { ejercicios })
-		}
-		return null
-	},
+  // Actualizar ejercicio en rutina
+  updateExercise: async (rutinaId, ejercicioId, updates) => {
+    const rutina = await rutinaService.getById(rutinaId)
+    if (rutina && rutina.datos_rutina) {
+      const ejercicios = rutina.datos_rutina.map((e) => {
+        if (
+          String(e.id) === String(ejercicioId) ||
+          String(e.ejercicio_id) === String(ejercicioId)
+        ) {
+          return { ...e, ...updates }
+        }
+        return e
+      })
+      return await rutinaService.update(rutinaId, { datos_rutina: ejercicios })
+    }
+    return null
+  },
 }
 
 export default rutinaService

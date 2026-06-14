@@ -52,6 +52,7 @@ import {
 } from '../../services/IA/exerciseDescriptions'
 import { getEjercicioById, EJERCICIOS } from '../../services/IA/ejerciciosDataset'
 import api from '../../api/api'
+import rutinaService from '../../services/rutinaService'
 import { createRepCounter } from '../../services/IA/exerciseRepCounter'
 import {
   initVoiceRecognition,
@@ -121,27 +122,37 @@ export default function RoutineWorkoutPage() {
   const lastPoseRef = useRef(null)
 
   useEffect(() => {
-    const stateData = location.state?.routine
-    if (stateData) {
-      setRoutineData(stateData)
-      const ejerciciosArray = Array.isArray(stateData.ejercicios)
-        ? stateData.ejercicios
-        : Array.isArray(stateData.datos_rutina)
-          ? stateData.datos_rutina
-          : []
-      const exerciseList = ejerciciosArray.map((e, index) => ({
-        ...getEjercicioById(e.ejercicio_id || e.id),
-        ...getExerciseDescription(e.ejercicio_id || e.id),
-        targetReps: e.repeticiones || 12,
-        targetSets: e.series || 3,
-        targetTime: e.tiempo || 30,
-        uniqueKey: `exercise-${index}-${e.ejercicio_id || e.id || Date.now()}`,
-        descanso: e.descanso || 60,
-        url: e.url || null,
-      }))
-      setExercises(exerciseList)
+    const loadRoutine = async () => {
+      let stateData = location.state?.routine
+      if (!stateData && rutinaId) {
+        try {
+          stateData = await rutinaService.getById(rutinaId)
+        } catch (err) {
+          console.error('Error cargando rutina desde API:', err)
+        }
+      }
+      if (stateData) {
+        setRoutineData(stateData)
+        const ejerciciosArray = Array.isArray(stateData.ejercicios)
+          ? stateData.ejercicios
+          : Array.isArray(stateData.datos_rutina)
+            ? stateData.datos_rutina
+            : []
+        const exerciseList = ejerciciosArray.map((e, index) => ({
+          ...getEjercicioById(e.ejercicio_id || e.id),
+          ...getExerciseDescription(e.ejercicio_id || e.id),
+          targetReps: e.repeticiones || 12,
+          targetSets: e.series || 3,
+          targetTime: e.tiempo || 30,
+          uniqueKey: `exercise-${index}-${e.ejercicio_id || e.id || Date.now()}`,
+          descanso: e.descanso || 60,
+          url: e.url || null,
+        }))
+        setExercises(exerciseList)
+      }
     }
-  }, [location.state])
+    loadRoutine()
+  }, [location.state, rutinaId])
 
   useEffect(() => {
     initVoiceService()

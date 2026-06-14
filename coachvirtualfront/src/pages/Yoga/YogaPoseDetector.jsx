@@ -388,7 +388,8 @@ export default function YogaPoseDetector({
 
   return (
     <div
-      className="relative rounded-none overflow-hidden border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)]"
+      translate="no"
+      className="relative rounded-none overflow-hidden border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)] notranslate"
       style={{
         minHeight: '350px',
         background: 'linear-gradient(135deg, #1e3a5f 0%, #2d1b4e 50%, #1a1a2e 100%)',
@@ -411,13 +412,16 @@ export default function YogaPoseDetector({
 
       {/* HU-11: Overlay de Calibración Inicial */}
       {!isCalibrated && (
-        <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <div
+          translate="no"
+          className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-6 notranslate"
+        >
           <div className="border-l-4 border-yellow-400 pl-4 py-1 text-left font-mono">
             <p className="text-[9px] font-black text-yellow-400 tracking-[0.25em] uppercase">
-              CALIBRACIÓN_OBLIGATORIA
+              <span>CALIBRACIÓN_OBLIGATORIA</span>
             </p>
             <h3 className="text-xl font-black italic uppercase tracking-tighter text-white">
-              Ajuste de Luz y Encuadre
+              <span>Ajuste de Luz y Encuadre</span>
             </h3>
           </div>
 
@@ -429,10 +433,10 @@ export default function YogaPoseDetector({
                 <span className="text-[8px] font-black text-white/50 tracking-wider">ILUMINACIÓN</span>
               </div>
               <p className={`text-xs font-black uppercase ${lightStatus === 'OK' ? 'text-green-400' : 'text-red-400'}`}>
-                {lightStatus === 'OK' ? 'ÓPTIMA' : lightStatus === 'LOW' ? 'BAJA' : 'EXCESIVA'}
+                <span>{lightStatus === 'OK' ? 'ÓPTIMA' : lightStatus === 'LOW' ? 'BAJA' : 'EXCESIVA'}</span>
               </p>
               <p className="text-[7px] text-white/40 uppercase mt-1">
-                {lightStatus === 'OK' ? 'Luz ambiente correcta' : 'Enciende una luz o acércate'}
+                <span>{lightStatus === 'OK' ? 'Luz ambiente correcta' : 'Enciende una luz o acércate'}</span>
               </p>
             </div>
 
@@ -443,10 +447,10 @@ export default function YogaPoseDetector({
                 <span className="text-[8px] font-black text-white/50 tracking-wider">ENCUADRE_CUERPO</span>
               </div>
               <p className={`text-xs font-black uppercase ${framingStatus !== 'NO_BODY' ? 'text-green-400' : 'text-red-400'}`}>
-                {framingStatus === 'FULL' ? 'CUERPO COMPLETO' : framingStatus === 'UPPER' ? 'CUERPO PARCIAL' : 'SIN CUERPO'}
+                <span>{framingStatus === 'FULL' ? 'CUERPO COMPLETO' : framingStatus === 'UPPER' ? 'CUERPO PARCIAL' : 'SIN CUERPO'}</span>
               </p>
               <p className="text-[7px] text-white/40 uppercase mt-1">
-                {framingStatus !== 'NO_BODY' ? 'Encuadre detectado' : 'Ubícate frente a la cámara'}
+                <span>{framingStatus !== 'NO_BODY' ? 'Encuadre detectado' : 'Ubícate frente a la cámara'}</span>
               </p>
             </div>
           </div>
@@ -454,16 +458,16 @@ export default function YogaPoseDetector({
           {lightStatus === 'OK' && framingStatus !== 'NO_BODY' ? (
             <div className="space-y-2 animate-bounce font-mono">
               <p className="text-4xl font-black text-yellow-400 italic">
-                {countdown > 0 ? countdown : 'LISTO'}
+                <span>{countdown > 0 ? countdown : 'LISTO'}</span>
               </p>
               <p className="text-[9px] text-white/50 tracking-widest uppercase">
-                MANTÉN LA POSICIÓN PARA FINALIZAR CALIBRACIÓN
+                <span>MANTÉN LA POSICIÓN PARA FINALIZAR CALIBRACIÓN</span>
               </p>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-[9px] font-mono text-white/30 uppercase tracking-widest">
               <Camera className="w-3.5 h-3.5 animate-pulse" />
-              Esperando condiciones óptimas del entorno...
+              <span>Esperando condiciones óptimas del entorno...</span>
             </div>
           )}
         </div>
