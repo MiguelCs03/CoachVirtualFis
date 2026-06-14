@@ -67,14 +67,59 @@ export default function YogaPoseDetector({
 
   // Cleanup
   const cleanup = useCallback(() => {
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
-    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
+    console.log('[YogaPoseDetector] cleanup iniciado', {
+      hasAnimFrame: !!animationFrameRef.current,
+      hasVideo: !!videoRef.current,
+      hasStream: !!streamRef.current,
+      hasPoseLandmarker: !!poseLandmarkerRef.current,
+    })
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.onloadedmetadata = null
+      videoRef.current.srcObject = null
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+    if (poseLandmarkerRef.current) {
+      try {
+        poseLandmarkerRef.current.close()
+      } catch (e) {
+        console.warn('[YogaPoseDetector] Error al cerrar poseLandmarker:', e)
+      }
+      poseLandmarkerRef.current = null
+    }
     smoothedLandmarksRef.current = null
+    brightnessCanvasRef.current = null
+    calibrationStartTimeRef.current = null
+    console.log('[YogaPoseDetector] cleanup completado')
   }, [])
 
   // INICIALIZACIÓN PARALELA: Cámara y Modelo al mismo tiempo
   useEffect(() => {
     isMountedRef.current = true
+
+    // Listener global para capturar errores DOM (removeChild, etc)
+    const domErrorHandler = (event) => {
+      if (event.error?.name === 'NotFoundError' || (event.message && event.message.includes('removeChild'))) {
+        console.error('[YogaPoseDetector] DOM ERROR CAPTURADO:', {
+          type: event.type,
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          error: event.error,
+          mounted: isMountedRef.current,
+          hasVideo: !!videoRef.current,
+          hasCanvas: !!canvasRef.current,
+          hasStream: !!streamRef.current,
+        })
+      }
+    }
+    window.addEventListener('error', domErrorHandler)
 
     // 1. CARGAR CÁMARA (INMEDIATO)
     const initCamera = async () => {
@@ -170,6 +215,7 @@ export default function YogaPoseDetector({
     Promise.all([initCamera(), initModel()])
 
     return () => {
+      window.removeEventListener('error', domErrorHandler)
       isMountedRef.current = false
       cleanup()
     }
@@ -353,7 +399,7 @@ export default function YogaPoseDetector({
             onPoseDetectedRef.current?.(results.landmarks[0])
           }
         } catch (e) {
-          // Silenciar
+          console.warn(`[YogaPoseDetector] Error en detect loop | name: ${e.name} | message: ${e.message} | mounted: ${isMountedRef.current} | video in DOM: ${document.contains(video)} | canvas in DOM: ${document.contains(canvas)}`, e)
         }
       }
 
