@@ -52,7 +52,7 @@ import {
 } from '../../services/IA/exerciseDescriptions'
 import { getEjercicioById, EJERCICIOS } from '../../services/IA/ejerciciosDataset'
 import api from '../../api/api'
-import rutinaService from '../../services/rutinaService'
+import rutinaService from '../../services/RutinaService'
 import { createRepCounter } from '../../services/IA/exerciseRepCounter'
 import {
   initVoiceRecognition,
