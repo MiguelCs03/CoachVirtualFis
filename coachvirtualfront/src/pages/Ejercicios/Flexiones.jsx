@@ -113,6 +113,7 @@ const CheckItem = ({ label, status, isWarning, pending, special }) => (
 export default function Flexiones() {
   const [started, setStarted] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
+  const [isCalibrated, setIsCalibrated] = useState(false)
   const navigate = useNavigate()
   
   const passedNombre = 'Flexiones de Pecho'
@@ -396,6 +397,11 @@ export default function Flexiones() {
                 <YogaPoseDetector
                   onPoseDetected={handlePoseDetected}
                   highlightedAngles={highlightedAngles}
+                  isCalibrated={isCalibrated}
+                  onCalibrationComplete={() => {
+                    setIsCalibrated(true)
+                    speak('Calibración exitosa. Comienza el ejercicio.')
+                  }}
                 />
               )}
 

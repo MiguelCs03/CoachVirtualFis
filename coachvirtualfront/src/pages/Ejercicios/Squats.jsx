@@ -113,6 +113,7 @@ const CheckItem = ({ label, status, isWarning, pending, special }) => (
 export default function Squats() {
   const [started, setStarted] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
+  const [isCalibrated, setIsCalibrated] = useState(false)
   const navigate = useNavigate()
   
   const passedNombre = 'Sentadillas'
@@ -355,6 +356,11 @@ export default function Squats() {
                 <YogaPoseDetector
                   onPoseDetected={handlePoseDetected}
                   highlightedAngles={highlightedAngles}
+                  isCalibrated={isCalibrated}
+                  onCalibrationComplete={() => {
+                    setIsCalibrated(true)
+                    speak('Calibración exitosa. Comienza el ejercicio.')
+                  }}
                 />
               )}
 

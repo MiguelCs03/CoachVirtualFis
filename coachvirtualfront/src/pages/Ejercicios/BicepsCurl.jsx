@@ -115,6 +115,7 @@ const CheckItem = ({ label, status, isWarning, pending, special }) => (
 export default function BicepsCurl() {
   const [started, setStarted] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
+  const [isCalibrated, setIsCalibrated] = useState(false)
   const navigate = useNavigate()
   
   const passedNombre = 'Curl de Bíceps'
@@ -394,6 +395,11 @@ export default function BicepsCurl() {
                 <YogaPoseDetector
                   onPoseDetected={handlePoseDetected}
                   highlightedAngles={highlightedAngles}
+                  isCalibrated={isCalibrated}
+                  onCalibrationComplete={() => {
+                    setIsCalibrated(true)
+                    speak('Calibración exitosa. Comienza el ejercicio.')
+                  }}
                 />
               )}
 

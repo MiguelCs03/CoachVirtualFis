@@ -23,6 +23,7 @@ import {
   Info,
   Activity,
   Cpu,
+  Loader2,
 } from 'lucide-react'
 import { useNotification } from '../../context/NotificationContext'
 
@@ -48,7 +49,11 @@ export default function Planes() {
       try {
         setLoadingPlanes(true)
         const response = await api.get('/suscripciones/tipos-plan/')
-        setPlanes(response.data.planes || [])
+        if (response.data?.planes && response.data.planes.length > 0) {
+          setPlanes(response.data.planes)
+        } else {
+          throw new Error('La base de datos no tiene planes registrados')
+        }
       } catch (err) {
         console.error('Error cargando planes:', err)
         // Fallback en caso de fallo en el servidor de suscripciones
@@ -155,6 +160,21 @@ export default function Planes() {
       if (response?.url) window.location.href = response.url
     } catch (err) {
       showNotification('ERROR_PASARELA: Error al iniciar el protocolo de pago.', 'error')
+      setLoading(null)
+    }
+  }
+
+  const handleCancelarPlan = async () => {
+    if (!window.confirm("¿Está seguro de que desea cancelar su suscripción? Volverá al plan gratuito.")) return
+
+    setLoading(currentPlanKey)
+    try {
+      await planService.cancelarPlan(true)
+      showNotification('Plan cancelado con éxito. Has vuelto al plan gratuito.', 'success')
+      await refrescarPlan?.()
+    } catch (err) {
+      showNotification('Error al cancelar el plan: ' + err.message, 'error')
+    } finally {
       setLoading(null)
     }
   }
@@ -300,12 +320,30 @@ export default function Planes() {
                   {/* Acciones del Módulo */}
                   <div className="pt-6">
                     {isCurrentPlan ? (
-                      <button
-                        disabled
-                        className="w-full bg-green-500/10 border border-green-500/20 text-green-500 py-4 font-black uppercase text-[10px] tracking-widest italic cursor-not-allowed"
-                      >
-                        ✓ SINCRONIZADO
-                      </button>
+                      isGratis ? (
+                        <button
+                          disabled
+                          className="w-full bg-green-500/10 border border-green-500/20 text-green-500 py-4 font-black uppercase text-[10px] tracking-widest italic cursor-not-allowed"
+                        >
+                          ✓ SINCRONIZADO
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            disabled
+                            className="w-full bg-green-500/10 border border-green-500/20 text-green-500 py-4 font-black uppercase text-[10px] tracking-widest italic cursor-not-allowed"
+                          >
+                            ✓ SINCRONIZADO
+                          </button>
+                          <button
+                            onClick={handleCancelarPlan}
+                            disabled={loading !== null}
+                            className="w-full bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white py-4 font-black uppercase text-[10px] tracking-widest transition-all"
+                          >
+                            {loading === plan.clave ? 'CANCELANDO...' : 'CANCELAR PLAN'}
+                          </button>
+                        </div>
+                      )
                     ) : (
                       <button
                         onClick={() => handlePagarStripe(plan.clave)}
