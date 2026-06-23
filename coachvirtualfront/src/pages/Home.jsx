@@ -147,7 +147,7 @@ const Home = () => {
         const normalized = data.map((r) => ({
           id: r.id,
           nombre: r.nombre || r.title || 'PROTOCOLO_S/N',
-          categoria: r.categoria || 'GIMNASIO',
+          categoria: (r.categoria?.toLowerCase() === 'fisioterapia' || r.categoria?.toLowerCase() === 'physio') ? 'PHYSIO' : 'GYM',
           parte: r.parte_cuerpo || r.parte || 'ESTÁNDAR',
           ejercicios: Array.isArray(r.datos_rutina) ? r.datos_rutina.length : r.ejercicios || 0,
           duracion: r.duracion_minutos ? `${r.duracion_minutos} MIN` : r.duracion || '45 MIN',
@@ -248,7 +248,7 @@ const Home = () => {
     const payload = {
       nombre: newRutinaNombre.toUpperCase(),
       duracion_minutos: parseInt(newRutinaDuracion) || 45,
-      categoria: newRutinaCategoria === 'Gimnasio' ? 'gym' : 'physio',
+      categoria: newRutinaCategoria === 'Gimnasio' ? 'gimnasio' : 'fisioterapia',
       parte_cuerpo: selectedExercises[0]?.parte || 'SISTÉMICO',
       datos_rutina: selectedExercises.map((e, idx) => ({
         id: Date.now() + idx,
@@ -268,7 +268,7 @@ const Home = () => {
         {
           id: created.id || Date.now(),
           nombre: payload.nombre,
-          categoria: newRutinaCategoria.toUpperCase(),
+          categoria: newRutinaCategoria === 'Gimnasio' ? 'GYM' : 'PHYSIO',
           progreso: 0,
           ejercicios: selectedExercises.length,
           duracion: `${payload.duracion_minutos} MIN`,
