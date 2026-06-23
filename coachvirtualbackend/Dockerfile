@@ -7,7 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --upgrade pip --quiet && pip install -r requirements.txt --no-cache-dir --quiet
+RUN pip install --upgrade pip --quiet && \
+    pip install -r requirements.txt --no-cache-dir --quiet && \
+    pip install gunicorn[gevent] --no-cache-dir --quiet
 
 COPY . .
 
@@ -17,4 +19,4 @@ EXPOSE $PORT
 
 WORKDIR /app/coachvirtualback
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn coachvirtualback.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput 2>/dev/null; gunicorn coachvirtualback.wsgi:application --bind 0.0.0.0:${PORT:-8000} --worker-class gevent --worker-connections 100 --workers 2 --timeout 30 --keep-alive 5 --log-level warning"]
